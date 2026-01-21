@@ -23,20 +23,74 @@ const COLORS = [
   'oklch(0.65 0.2 80)',
 ]
 
-const HAPPY_FACES = ['😄', '🎉', '🥳', '😊', '🤩', '😁', '✨', '🙌']
+const FACE_POSITIONS = [
+  { top: '8%', left: '8%' },
+  { top: '8%', right: '8%' },
+  { bottom: '8%', left: '8%' },
+  { bottom: '8%', right: '8%' },
+]
 
-function TileFace({ isAnimating }: { isAnimating: boolean }) {
-  const [face, setFace] = useState(() => HAPPY_FACES[Math.floor(Math.random() * HAPPY_FACES.length)])
+function HappyFace({ variant }: { variant: number }) {
+  switch (variant % 4) {
+    case 0:
+      return (
+        <svg viewBox="0 0 40 40" className="w-full h-full">
+          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
+          <circle cx="13" cy="16" r="3" fill="white" />
+          <circle cx="27" cy="16" r="3" fill="white" />
+          <path d="M10 24 Q20 34 30 24" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        </svg>
+      )
+    case 1:
+      return (
+        <svg viewBox="0 0 40 40" className="w-full h-full">
+          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
+          <line x1="9" y1="12" x2="17" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="17" y1="12" x2="9" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="23" y1="12" x2="31" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="31" y1="12" x2="23" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="20" cy="28" rx="6" ry="5" fill="white" />
+        </svg>
+      )
+    case 2:
+      return (
+        <svg viewBox="0 0 40 40" className="w-full h-full">
+          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
+          <circle cx="13" cy="15" r="3.5" fill="white" />
+          <circle cx="27" cy="15" r="3.5" fill="white" />
+          <circle cx="14" cy="14" r="1.5" fill="currentColor" fillOpacity="0.3" />
+          <circle cx="28" cy="14" r="1.5" fill="currentColor" fillOpacity="0.3" />
+          <path d="M12 26 Q20 32 28 26" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <circle cx="8" cy="24" r="3" fill="white" fillOpacity="0.4" />
+          <circle cx="32" cy="24" r="3" fill="white" fillOpacity="0.4" />
+        </svg>
+      )
+    case 3:
+    default:
+      return (
+        <svg viewBox="0 0 40 40" className="w-full h-full">
+          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
+          <path d="M9 14 L13 10 L17 14" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M23 14 L27 10 L31 14" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M11 25 Q20 33 29 25" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <line x1="20" y1="4" x2="20" y2="1" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <line x1="28" y1="6" x2="30" y2="3" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <line x1="12" y1="6" x2="10" y2="3" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      )
+  }
+}
+
+function TileFace({ isAnimating, tallyId }: { isAnimating: boolean; tallyId: string }) {
+  const [faceVariant] = useState(() => Math.floor(Math.random() * 4))
+  const [positionIndex] = useState(() => Math.floor(Math.random() * FACE_POSITIONS.length))
   
-  useEffect(() => {
-    if (isAnimating) {
-      setFace(HAPPY_FACES[Math.floor(Math.random() * HAPPY_FACES.length)])
-    }
-  }, [isAnimating])
+  const position = FACE_POSITIONS[positionIndex]
 
   return (
     <motion.div
-      className="absolute top-2 right-2 text-2xl md:text-3xl"
+      className="absolute w-12 h-12 md:w-16 md:h-16"
+      style={position}
       initial={{ scale: 1, rotate: 0 }}
       animate={isAnimating ? {
         scale: [1, 1.4, 1.2, 1.5, 1],
@@ -45,7 +99,7 @@ function TileFace({ isAnimating }: { isAnimating: boolean }) {
       } : { scale: 1, rotate: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
-      {face}
+      <HappyFace variant={faceVariant} />
     </motion.div>
   )
 }
@@ -263,7 +317,7 @@ function App() {
                       className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden relative"
                       style={{ backgroundColor: tally.color }}
                     >
-                      <TileFace isAnimating={animatingId === tally.id} />
+                      <TileFace isAnimating={animatingId === tally.id} tallyId={tally.id} />
                       <CardContent className="h-full flex flex-col items-center justify-center p-4">
                         <motion.span
                           key={tally.count}
