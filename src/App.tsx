@@ -16,6 +16,24 @@ interface Tally {
   animalType: number
 }
 
+interface UserInfo {
+  id: string
+  login: string
+  avatarUrl: string
+  email: string
+  isOwner: boolean
+}
+
+function useCurrentUser() {
+  const [user, setUser] = useState<UserInfo | null>(null)
+  
+  useEffect(() => {
+    spark.user().then(setUser)
+  }, [])
+  
+  return user
+}
+
 const COLORS = [
   'oklch(0.65 0.2 250)',
   'oklch(0.65 0.2 150)',
@@ -673,7 +691,9 @@ function TallyTile({
 }
 
 function App() {
-  const [tallies, setTallies] = useKV<Tally[]>('user-tallies', [])
+  const user = useCurrentUser()
+  const storageKey = user ? `tallies-${user.id}` : null
+  const [tallies, setTallies] = useKV<Tally[]>(storageKey ?? 'tallies-loading', [])
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -684,7 +704,7 @@ function App() {
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
 
-  const currentTallies = tallies ?? []
+  const currentTallies = storageKey ? (tallies ?? []) : []
   
   const totalTallies = useMemo(() => 
     currentTallies.reduce((sum, t) => sum + t.count, 0),
@@ -806,6 +826,17 @@ function App() {
     }
   }, [])
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 animate-pulse" />
+          <p className="text-muted-foreground">Loading your tallies...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div 
@@ -824,6 +855,14 @@ function App() {
           <p className="text-muted-foreground">
             Tap to count. Long press to edit.
           </p>
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <img 
+              src={user.avatarUrl} 
+              alt={user.login}
+              className="w-5 h-5 rounded-full"
+            />
+            <span className="text-xs text-muted-foreground">{user.login}'s tallies</span>
+          </div>
           {nextUnlock && (
             <div className="pt-2">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/70 rounded-full text-sm">
