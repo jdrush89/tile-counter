@@ -331,32 +331,34 @@ function RunningDragon({ legPhase }: { legPhase: number }) {
   const fireFlicker = Math.sin(legPhase * 4) * 2
   
   return (
-    <svg viewBox="0 0 50 40" className="w-full h-full">
-      <ellipse cx="24" cy="24" rx="12" ry="8" fill="white" fillOpacity="0.9" />
-      <g transform={`rotate(${-wingFlap}, 24, 20)`}>
-        <path d="M24 20 Q18 8 10 6 Q16 12 14 18 Q20 14 24 20" fill="white" fillOpacity="0.8" />
-      </g>
-      <g transform={`rotate(${wingFlap}, 24, 20)`}>
-        <path d="M24 20 Q30 8 38 6 Q32 12 34 18 Q28 14 24 20" fill="white" fillOpacity="0.7" />
-      </g>
-      <circle cx="38" cy="20" r="5" fill="white" fillOpacity="0.9" />
-      <path d="M36 16 L34 12 L37 15" fill="white" fillOpacity="0.9" />
-      <path d="M40 15 L42 11 L40 15" fill="white" fillOpacity="0.9" />
-      <circle cx="36" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
-      <circle cx="40" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
-      <ellipse cx="38" cy="22" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
-      <path
-        d={`M43 21 L${46 + fireFlicker} 20 L${48 + fireFlicker} 21 L${46 + fireFlicker} 22 L43 21`}
-        fill="white"
-        fillOpacity="0.7"
-      />
-      <path d={`M12 24 Q${6 + tailWave} 22 ${4 + tailWave} 18`} stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9" />
-      <path d={`M${4 + tailWave} 18 L${2 + tailWave} 15 M${4 + tailWave} 18 L${6 + tailWave} 15 M${4 + tailWave} 18 L${4 + tailWave} 14`} stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
-      <g transform={`rotate(${legSwing}, 28, 30)`}>
-        <line x1="28" y1="30" x2="28" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-      </g>
-      <g transform={`rotate(${-legSwing}, 20, 30)`}>
-        <line x1="20" y1="30" x2="20" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+    <svg viewBox="0 0 70 50" className="w-full h-full">
+      <g transform="translate(10, 5) scale(1.4)">
+        <ellipse cx="24" cy="24" rx="12" ry="8" fill="white" fillOpacity="0.9" />
+        <g transform={`rotate(${-wingFlap}, 24, 20)`}>
+          <path d="M24 20 Q18 8 10 6 Q16 12 14 18 Q20 14 24 20" fill="white" fillOpacity="0.8" />
+        </g>
+        <g transform={`rotate(${wingFlap}, 24, 20)`}>
+          <path d="M24 20 Q30 8 38 6 Q32 12 34 18 Q28 14 24 20" fill="white" fillOpacity="0.7" />
+        </g>
+        <circle cx="38" cy="20" r="5" fill="white" fillOpacity="0.9" />
+        <path d="M36 16 L34 12 L37 15" fill="white" fillOpacity="0.9" />
+        <path d="M40 15 L42 11 L40 15" fill="white" fillOpacity="0.9" />
+        <circle cx="36" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <circle cx="40" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <ellipse cx="38" cy="22" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
+        <path
+          d={`M43 21 L${46 + fireFlicker} 20 L${48 + fireFlicker} 21 L${46 + fireFlicker} 22 L43 21`}
+          fill="white"
+          fillOpacity="0.7"
+        />
+        <path d={`M12 24 Q${6 + tailWave} 22 ${4 + tailWave} 18`} stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9" />
+        <path d={`M${4 + tailWave} 18 L${2 + tailWave} 15 M${4 + tailWave} 18 L${6 + tailWave} 15 M${4 + tailWave} 18 L${4 + tailWave} 14`} stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+        <g transform={`rotate(${legSwing}, 28, 30)`}>
+          <line x1="28" y1="30" x2="28" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 20, 30)`}>
+          <line x1="20" y1="30" x2="20" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        </g>
       </g>
     </svg>
   )
@@ -370,43 +372,45 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
   const headBob = Math.sin(legPhase * 2) * 2
   
   return (
-    <svg viewBox="0 0 55 40" className="w-full h-full">
-      <ellipse cx="24" cy="22" rx="13" ry="9" fill="white" fillOpacity="0.9" />
-      <g transform={`rotate(${-wingFlap}, 22, 18)`}>
-        <path d="M22 18 Q14 6 6 4 Q10 10 8 14 Q12 12 14 16 Q18 12 22 18" fill="white" fillOpacity="0.85" />
-        <path d="M8 14 Q4 10 2 12" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
-        <path d="M14 16 Q10 14 8 16" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+    <svg viewBox="0 0 75 50" className="w-full h-full">
+      <g transform="translate(10, 5) scale(1.4)">
+        <ellipse cx="24" cy="22" rx="13" ry="9" fill="white" fillOpacity="0.9" />
+        <g transform={`rotate(${-wingFlap}, 22, 18)`}>
+          <path d="M22 18 Q14 6 6 4 Q10 10 8 14 Q12 12 14 16 Q18 12 22 18" fill="white" fillOpacity="0.85" />
+          <path d="M8 14 Q4 10 2 12" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+          <path d="M14 16 Q10 14 8 16" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+        </g>
+        <g transform={`rotate(${wingFlap}, 26, 18)`}>
+          <path d="M26 18 Q34 6 42 4 Q38 10 40 14 Q36 12 34 16 Q30 12 26 18" fill="white" fillOpacity="0.75" />
+        </g>
+        <g transform={`translate(0, ${headBob})`}>
+          <ellipse cx="40" cy="16" rx="6" ry="5" fill="white" fillOpacity="0.9" />
+          <path d="M38 12 Q36 8 38 10" fill="white" fillOpacity="0.9" />
+          <path d="M42 11 Q44 7 42 9" fill="white" fillOpacity="0.9" />
+          <circle cx="38" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
+          <circle cx="42" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
+          <path d="M44 17 Q48 16 50 17 Q48 18 44 18" fill="white" fillOpacity="0.8" />
+          <path d="M50 17 L52 16 M50 17 L52 18" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+        </g>
+        <g transform={`rotate(${frontLegAngle}, 30, 28)`}>
+          <line x1="30" y1="28" x2="30" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M30 38 L28 39 M30 38 L32 39 M30 38 L30 40" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+        </g>
+        <g transform={`rotate(${frontLegAngle - 15}, 34, 28)`}>
+          <line x1="34" y1="28" x2="34" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M34 38 L32 39 M34 38 L36 39 M34 38 L34 40" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+        </g>
+        <g transform={`rotate(${backLegAngle}, 14, 28)`}>
+          <path d="M14 28 Q12 33 14 38" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <ellipse cx="14" cy="39" rx="2" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${backLegAngle - 15}, 18, 28)`}>
+          <path d="M18 28 Q16 33 18 38" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <ellipse cx="18" cy="39" rx="2" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <path d={`M11 22 Q${5 + tailSwish} 20 ${3 + tailSwish} 24 Q${6 + tailSwish} 22 ${4 + tailSwish} 28`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+        <ellipse cx={4 + tailSwish} cy="29" rx="2" ry="3" fill="white" fillOpacity="0.8" />
       </g>
-      <g transform={`rotate(${wingFlap}, 26, 18)`}>
-        <path d="M26 18 Q34 6 42 4 Q38 10 40 14 Q36 12 34 16 Q30 12 26 18" fill="white" fillOpacity="0.75" />
-      </g>
-      <g transform={`translate(0, ${headBob})`}>
-        <ellipse cx="40" cy="16" rx="6" ry="5" fill="white" fillOpacity="0.9" />
-        <path d="M38 12 Q36 8 38 10" fill="white" fillOpacity="0.9" />
-        <path d="M42 11 Q44 7 42 9" fill="white" fillOpacity="0.9" />
-        <circle cx="38" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
-        <circle cx="42" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
-        <path d="M44 17 Q48 16 50 17 Q48 18 44 18" fill="white" fillOpacity="0.8" />
-        <path d="M50 17 L52 16 M50 17 L52 18" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
-      </g>
-      <g transform={`rotate(${frontLegAngle}, 30, 28)`}>
-        <line x1="30" y1="28" x2="30" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M30 38 L28 39 M30 38 L32 39 M30 38 L30 40" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
-      </g>
-      <g transform={`rotate(${frontLegAngle - 15}, 34, 28)`}>
-        <line x1="34" y1="28" x2="34" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M34 38 L32 39 M34 38 L36 39 M34 38 L34 40" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
-      </g>
-      <g transform={`rotate(${backLegAngle}, 14, 28)`}>
-        <path d="M14 28 Q12 33 14 38" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
-        <ellipse cx="14" cy="39" rx="2" ry="1.5" fill="white" fillOpacity="0.9" />
-      </g>
-      <g transform={`rotate(${backLegAngle - 15}, 18, 28)`}>
-        <path d="M18 28 Q16 33 18 38" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
-        <ellipse cx="18" cy="39" rx="2" ry="1.5" fill="white" fillOpacity="0.9" />
-      </g>
-      <path d={`M11 22 Q${5 + tailSwish} 20 ${3 + tailSwish} 24 Q${6 + tailSwish} 22 ${4 + tailSwish} 28`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
-      <ellipse cx={4 + tailSwish} cy="29" rx="2" ry="3" fill="white" fillOpacity="0.8" />
     </svg>
   )
 }
