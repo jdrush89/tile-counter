@@ -704,6 +704,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [isLoaded, setIsLoaded] = useState(false)
 
   const currentTallies = tallies ?? []
+  const [showNewButton, setShowNewButton] = useState(false)
   
   const totalTallies = useMemo(() => 
     currentTallies.reduce((sum, t) => sum + t.count, 0),
@@ -723,6 +724,11 @@ function TallyApp({ user }: { user: UserInfo }) {
   useEffect(() => {
     if (tallies !== undefined) {
       setIsLoaded(true)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setShowNewButton(true)
+        })
+      })
     }
   }, [tallies])
 
@@ -1043,59 +1049,64 @@ function TallyApp({ user }: { user: UserInfo }) {
             ))}
           </AnimatePresence>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
-              >
-                <Card className="aspect-square border-2 border-dashed border-muted-foreground/30 bg-transparent hover:bg-secondary/50 hover:border-primary/50 transition-all cursor-pointer">
-                  <CardContent className="h-full flex flex-col items-center justify-center gap-2 p-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Plus size={28} weight="bold" className="text-primary" />
-                    </div>
-                    <span className="text-sm font-medium text-muted-foreground">
-                      New Tally
-                    </span>
-                  </CardContent>
-                </Card>
-              </motion.button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create New Tally</DialogTitle>
-              </DialogHeader>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  addTally()
-                }}
-                className="space-y-4 pt-4"
-              >
-                <Input
-                  id="tally-title"
-                  placeholder="e.g. Movies watched, Coffees, Pushups..."
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="text-lg"
-                  autoFocus
-                />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={!newTitle.trim()}>
-                    Create
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          {showNewButton && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+                >
+                  <Card className="aspect-square border-2 border-dashed border-muted-foreground/30 bg-transparent hover:bg-secondary/50 hover:border-primary/50 transition-all cursor-pointer">
+                    <CardContent className="h-full flex flex-col items-center justify-center gap-2 p-4">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Plus size={28} weight="bold" className="text-primary" />
+                      </div>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        New Tally
+                      </span>
+                    </CardContent>
+                  </Card>
+                </motion.button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create New Tally</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    addTally()
+                  }}
+                  className="space-y-4 pt-4"
+                >
+                  <Input
+                    id="tally-title"
+                    placeholder="e.g. Movies watched, Coffees, Pushups..."
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="text-lg"
+                    autoFocus
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={!newTitle.trim()}>
+                      Create
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {currentTallies.length === 0 && (
