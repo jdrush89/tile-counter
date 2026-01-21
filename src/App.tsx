@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash, Minus } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Tally {
@@ -28,8 +28,38 @@ function App() {
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+  const [isEditingName, setIsEditingName] = useState(false)
+  const longPressTimerRef = useRef<number | null>(null)
+  const isLongPressRef = useRef(false)
 
   const currentTallies = tallies ?? []
+
+  const startLongPress = (id: string) => {
+    isLongPressRef.current = false
+    longPressTimerRef.current = window.setTimeout(() => {
+      isLongPressRef.current = true
+      const tally = currentTallies.find(t => t.id === id)
+      if (tally) {
+        setEditingTitle(tally.title)
+      }
+      setEditingId(id)
+    }, 500)
+  }
+
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  const handleClick = (id: string) => {
+    if (!isLongPressRef.current) {
+      incrementTally(id)
+    }
+    isLongPressRef.current = false
+  }
 
   const addTally = () => {
     if (!newTitle.trim()) return
@@ -54,10 +84,33 @@ function App() {
     )
   }
 
+  const updateTallyTitle = (id: string, newTitleValue: string) => {
+    if (!newTitleValue.trim()) return
+    setTallies((current) =>
+      (current ?? []).map((t) => (t.id === id ? { ...t, title: newTitleValue.trim() } : t))
+    )
+    setIsEditingName(false)
+  }
+
   const deleteTally = (id: string) => {
     setTallies((current) => (current ?? []).filter((t) => t.id !== id))
     setEditingId(null)
+    setIsEditingName(false)
   }
+
+  const closeEditMode = () => {
+    setEditingId(null)
+    setIsEditingName(false)
+    setEditingTitle('')
+  }
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -91,12 +144,46 @@ function App() {
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               >
                 {editingId === tally.id ? (
-                  <Card className="aspect-square border-2 border-dashed border-destructive/50 bg-card">
-                    <CardContent className="h-full flex flex-col items-center justify-center gap-3 p-4">
-                      <p className="text-sm font-medium text-muted-foreground truncate w-full text-center">
-                        {tally.title}
-                      </p>
-                      <div className="flex gap-2">
+                  <Card className="aspect-square border-2 border-primary/50 bg-card">
+                    <CardContent className="h-full flex flex-col items-center justify-center gap-2 p-3">
+                      <span className="text-3xl md:text-4xl font-bold text-foreground">
+                        {tally.count}
+                      </span>
+                      
+                      {isEditingName ? (
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            updateTallyTitle(tally.id, editingTitle)
+                          }}
+                          className="flex gap-1 w-full"
+                        >
+                          <Input
+                            id="edit-title"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            className="h-8 text-sm"
+                            autoFocus
+                          />
+                          <Button
+                            type="submit"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                          >
+                            <Check size={14} weight="bold" />
+                          </Button>
+                        </form>
+                      ) : (
+                        <button
+                          onClick={() => setIsEditingName(true)}
+                          className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <span className="truncate max-w-[100px]">{tally.title}</span>
+                          <PencilSimple size={14} />
+                        </button>
+                      )}
+                      
+                      <div className="flex gap-2 mt-1">
                         <Button
                           variant="outline"
                           size="icon"
@@ -117,8 +204,8 @@ function App() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditingId(null)}
-                        className="text-xs"
+                        onClick={closeEditMode}
+                        className="text-xs mt-1"
                       >
                         Done
                       </Button>
@@ -127,17 +214,19 @@ function App() {
                 ) : (
                   <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => incrementTally(tally.id)}
+                    onClick={() => handleClick(tally.id)}
                     onContextMenu={(e) => {
                       e.preventDefault()
+                      const t = currentTallies.find(item => item.id === tally.id)
+                      if (t) setEditingTitle(t.title)
                       setEditingId(tally.id)
                     }}
-                    onTouchStart={() => {
-                      const timeout = setTimeout(() => setEditingId(tally.id), 500)
-                      const clear = () => clearTimeout(timeout)
-                      document.addEventListener('touchend', clear, { once: true })
-                      document.addEventListener('touchmove', clear, { once: true })
-                    }}
+                    onTouchStart={() => startLongPress(tally.id)}
+                    onTouchEnd={cancelLongPress}
+                    onTouchMove={cancelLongPress}
+                    onMouseDown={() => startLongPress(tally.id)}
+                    onMouseUp={cancelLongPress}
+                    onMouseLeave={cancelLongPress}
                     className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
                   >
                     <Card 
