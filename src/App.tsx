@@ -1005,9 +1005,19 @@ function TallyApp({ user }: { user: UserInfo }) {
                     <CardContent className="h-full overflow-y-auto p-3 md:p-4">
                       <div className="flex flex-col items-center gap-2 md:gap-3 min-h-full justify-between">
                         <div className="flex flex-col items-center gap-1.5 md:gap-2 w-full">
-                          <span className="text-2xl md:text-3xl font-bold text-foreground">
-                            {tally.count}
-                          </span>
+                          <Input
+                            id={`count-input-${tally.id}`}
+                            type="number"
+                            min="0"
+                            value={tally.count}
+                            onChange={(e) => {
+                              const newCount = Math.max(0, parseInt(e.target.value) || 0)
+                              setTallies((current) =>
+                                (current ?? []).map((t) => (t.id === tally.id ? { ...t, count: newCount } : t))
+                              )
+                            }}
+                            className="w-20 h-9 text-2xl md:text-3xl font-bold text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
                           
                           {isEditingName ? (
                             <form 
