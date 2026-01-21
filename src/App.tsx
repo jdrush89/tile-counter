@@ -192,7 +192,7 @@ function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'rig
 
 type IdleState = 'hidden' | 'peeking' | 'walking' | 'running'
 
-function TileAnimal({ isAnimating, isHovered }: { isAnimating: boolean; isHovered: boolean }) {
+function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isAnimating: boolean; isHovered: boolean; animalIndex: number; totalAnimals: number }) {
   const [animalVariant] = useState(() => Math.floor(Math.random() * 4))
   const [legPhase, setLegPhase] = useState(0)
   const [position, setPosition] = useState({ x: -20, y: 65 })
@@ -203,6 +203,7 @@ function TileAnimal({ isAnimating, isHovered }: { isAnimating: boolean; isHovere
   const startTimeRef = useRef<number | null>(null)
   const idleTimerRef = useRef<number | null>(null)
   const walkStartPosRef = useRef({ x: 0, y: 65 })
+  const staggerDelay = animalIndex * 120
 
   const clearAnimations = () => {
     if (animationRef.current) {
@@ -262,38 +263,41 @@ function TileAnimal({ isAnimating, isHovered }: { isAnimating: boolean; isHovere
         idleTimerRef.current = null
       }
       
-      setIdleState('running')
-      const newDirection = Math.random() > 0.5 ? 1 : -1
-      setDirection(newDirection)
-      setPosition({ x: newDirection === 1 ? -15 : 115, y: 65 })
-      startTimeRef.current = null
-      
-      const animate = (timestamp: number) => {
-        if (!startTimeRef.current) startTimeRef.current = timestamp
-        const elapsed = timestamp - startTimeRef.current
+      setTimeout(() => {
+        setIdleState('running')
+        const newDirection = Math.random() > 0.5 ? 1 : -1
+        setDirection(newDirection)
+        const yOffset = totalAnimals > 1 ? (animalIndex % 3) * 8 - 8 : 0
+        setPosition({ x: newDirection === 1 ? -15 : 115, y: 65 + yOffset })
+        startTimeRef.current = null
         
-        const phase = elapsed * 0.025
-        setLegPhase(phase)
-        
-        const progress = Math.min(elapsed / 1000, 1)
-        const eased = 1 - Math.pow(1 - progress, 3)
-        
-        const startX = newDirection === 1 ? -15 : 115
-        const targetX = newDirection === 1 ? 115 : -15
-        const newX = startX + (targetX - startX) * eased
-        const bounce = Math.sin(phase * 2) * 2
-        setPosition({ x: newX, y: 65 + bounce })
-        
-        if (elapsed < 1000) {
-          animationRef.current = requestAnimationFrame(animate)
-        } else {
-          setIdleState('hidden')
+        const animate = (timestamp: number) => {
+          if (!startTimeRef.current) startTimeRef.current = timestamp
+          const elapsed = timestamp - startTimeRef.current
+          
+          const phase = elapsed * 0.025
+          setLegPhase(phase)
+          
+          const progress = Math.min(elapsed / 1000, 1)
+          const eased = 1 - Math.pow(1 - progress, 3)
+          
+          const startX = newDirection === 1 ? -15 : 115
+          const targetX = newDirection === 1 ? 115 : -15
+          const newX = startX + (targetX - startX) * eased
+          const bounce = Math.sin(phase * 2) * 2
+          setPosition({ x: newX, y: 65 + yOffset + bounce })
+          
+          if (elapsed < 1000) {
+            animationRef.current = requestAnimationFrame(animate)
+          } else {
+            setIdleState('hidden')
+          }
         }
-      }
-      
-      animationRef.current = requestAnimationFrame(animate)
+        
+        animationRef.current = requestAnimationFrame(animate)
+      }, staggerDelay)
     }
-  }, [isAnimating])
+  }, [isAnimating, staggerDelay, animalIndex, totalAnimals])
 
   useEffect(() => {
     if (idleState !== 'hidden' && idleState !== 'peeking') return
@@ -410,7 +414,8 @@ function TileAnimal({ isAnimating, isHovered }: { isAnimating: boolean; isHovere
 
 function TallyTile({ 
   tally, 
-  isAnimating, 
+  isAnimating,
+  animatingCount,
   onIncrement, 
   onStartLongPress, 
   onCancelLongPress,
@@ -418,12 +423,14 @@ function TallyTile({
 }: { 
   tally: Tally
   isAnimating: boolean
+  animatingCount: number
   onIncrement: () => void
   onStartLongPress: () => void
   onCancelLongPress: () => void
   onOpenEdit: () => void
 }) {
   const [isHovered, setIsHovered] = useState(false)
+  const maxAnimals = Math.min(animatingCount, 20)
   
   return (
     <motion.button
@@ -449,7 +456,19 @@ function TallyTile({
         className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden relative"
         style={{ backgroundColor: tally.color }}
       >
-        <TileAnimal isAnimating={isAnimating} isHovered={isHovered} />
+        {isAnimating ? (
+          Array.from({ length: maxAnimals }).map((_, i) => (
+            <TileAnimal 
+              key={i} 
+              isAnimating={isAnimating} 
+              isHovered={isHovered} 
+              animalIndex={i}
+              totalAnimals={maxAnimals}
+            />
+          ))
+        ) : (
+          <TileAnimal isAnimating={false} isHovered={isHovered} animalIndex={0} totalAnimals={1} />
+        )}
         <CardContent className="h-full flex flex-col items-center justify-center p-4">
           <motion.span
             key={tally.count}
@@ -476,6 +495,7 @@ function App() {
   const [editingTitle, setEditingTitle] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
   const [animatingId, setAnimatingId] = useState<string | null>(null)
+  const [animatingCount, setAnimatingCount] = useState(0)
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
 
@@ -519,11 +539,18 @@ function App() {
   }
 
   const incrementTally = (id: string) => {
+    const currentTally = currentTallies.find(t => t.id === id)
+    const newCount = currentTally ? currentTally.count + 1 : 1
+    
     setTallies((current) =>
       (current ?? []).map((t) => (t.id === id ? { ...t, count: t.count + 1 } : t))
     )
     setAnimatingId(id)
-    setTimeout(() => setAnimatingId(null), 1000)
+    setAnimatingCount(newCount)
+    setTimeout(() => {
+      setAnimatingId(null)
+      setAnimatingCount(0)
+    }, 1500)
   }
 
   const decrementTally = (id: string) => {
@@ -663,6 +690,7 @@ function App() {
                   <TallyTile
                     tally={tally}
                     isAnimating={animatingId === tally.id}
+                    animatingCount={animatingId === tally.id ? animatingCount : 0}
                     onIncrement={() => handleClick(tally.id)}
                     onStartLongPress={() => startLongPress(tally.id)}
                     onCancelLongPress={cancelLongPress}
