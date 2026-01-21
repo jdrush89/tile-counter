@@ -23,6 +23,33 @@ const COLORS = [
   'oklch(0.65 0.2 80)',
 ]
 
+const HAPPY_FACES = ['😄', '🎉', '🥳', '😊', '🤩', '😁', '✨', '🙌']
+
+function TileFace({ isAnimating }: { isAnimating: boolean }) {
+  const [face, setFace] = useState(() => HAPPY_FACES[Math.floor(Math.random() * HAPPY_FACES.length)])
+  
+  useEffect(() => {
+    if (isAnimating) {
+      setFace(HAPPY_FACES[Math.floor(Math.random() * HAPPY_FACES.length)])
+    }
+  }, [isAnimating])
+
+  return (
+    <motion.div
+      className="absolute top-2 right-2 text-2xl md:text-3xl"
+      initial={{ scale: 1, rotate: 0 }}
+      animate={isAnimating ? {
+        scale: [1, 1.4, 1.2, 1.5, 1],
+        rotate: [0, -15, 15, -10, 0],
+        y: [0, -8, 0, -5, 0]
+      } : { scale: 1, rotate: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
+      {face}
+    </motion.div>
+  )
+}
+
 function App() {
   const [tallies, setTallies] = useKV<Tally[]>('user-tallies', [])
   const [newTitle, setNewTitle] = useState('')
@@ -30,6 +57,7 @@ function App() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
+  const [animatingId, setAnimatingId] = useState<string | null>(null)
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
 
@@ -76,6 +104,8 @@ function App() {
     setTallies((current) =>
       (current ?? []).map((t) => (t.id === id ? { ...t, count: t.count + 1 } : t))
     )
+    setAnimatingId(id)
+    setTimeout(() => setAnimatingId(null), 500)
   }
 
   const decrementTally = (id: string) => {
@@ -230,9 +260,10 @@ function App() {
                     className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
                   >
                     <Card 
-                      className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden"
+                      className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden relative"
                       style={{ backgroundColor: tally.color }}
                     >
+                      <TileFace isAnimating={animatingId === tally.id} />
                       <CardContent className="h-full flex flex-col items-center justify-center p-4">
                         <motion.span
                           key={tally.count}
