@@ -366,7 +366,7 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
   const wingFlap = Math.sin(legPhase * 1.5) * 35
   const frontLegAngle = Math.sin(legPhase) * 30
   const backLegAngle = Math.sin(legPhase + Math.PI) * 30
-  const tailSwish = Math.sin(legPhase) * 12
+  const tailSwish = Math.sin(legPhase) * 10
   const headBob = Math.sin(legPhase * 2) * 2
   
   return (
@@ -381,13 +381,13 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
         <path d="M26 18 Q34 6 42 4 Q38 10 40 14 Q36 12 34 16 Q30 12 26 18" fill="white" fillOpacity="0.75" />
       </g>
       <g transform={`translate(0, ${headBob})`}>
-        <ellipse cx="40" cy="16" rx="6" ry="5" fill="white" fillOpacity="0.9" />
-        <path d="M38 12 Q36 8 38 10" fill="white" fillOpacity="0.9" />
-        <path d="M42 11 Q44 7 42 9" fill="white" fillOpacity="0.9" />
-        <circle cx="38" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
-        <circle cx="42" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
-        <path d="M44 17 Q48 16 50 17 Q48 18 44 18" fill="white" fillOpacity="0.8" />
-        <path d="M50 17 L52 16 M50 17 L52 18" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+        <ellipse cx="42" cy="14" rx="5" ry="4.5" fill="white" fillOpacity="0.9" />
+        <path d="M46 14 L52 13 L46 16 Z" fill="white" fillOpacity="0.95" />
+        <path d="M46 14.5 L50 14" stroke="white" strokeWidth="0.5" opacity="0.5" />
+        <circle cx="44" cy="13" r="1" fill="currentColor" fillOpacity="0.5" />
+        <path d="M39 10 Q37 6 40 9" fill="white" fillOpacity="0.9" />
+        <path d="M43 9 Q42 5 45 8" fill="white" fillOpacity="0.9" />
+        <ellipse cx="40" cy="12" rx="1.5" ry="2" fill="white" fillOpacity="0.6" />
       </g>
       <g transform={`rotate(${frontLegAngle}, 30, 28)`}>
         <line x1="30" y1="28" x2="30" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
@@ -405,8 +405,10 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
         <path d="M18 28 Q16 33 18 38" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
         <ellipse cx="18" cy="39" rx="2" ry="1.5" fill="white" fillOpacity="0.9" />
       </g>
-      <path d={`M11 22 Q${5 + tailSwish} 20 ${3 + tailSwish} 24 Q${6 + tailSwish} 22 ${4 + tailSwish} 28`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
-      <ellipse cx={4 + tailSwish} cy="29" rx="2" ry="3" fill="white" fillOpacity="0.8" />
+      <path d={`M11 22 Q${6 + tailSwish} 22 ${4 + tailSwish} 26`} stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9" />
+      <ellipse cx={3 + tailSwish} cy="27" rx="3" ry="4" fill="white" fillOpacity="0.85" />
+      <path d={`M${2 + tailSwish} 24 Q${0 + tailSwish} 22 ${1 + tailSwish} 25`} stroke="white" strokeWidth="1" fill="none" opacity="0.7" />
+      <path d={`M${4 + tailSwish} 24 Q${5 + tailSwish} 21 ${4 + tailSwish} 25`} stroke="white" strokeWidth="1" fill="none" opacity="0.7" />
     </svg>
   )
 }
