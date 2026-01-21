@@ -172,18 +172,97 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
   }
 }
 
-function TileAnimal({ isAnimating }: { isAnimating: boolean }) {
+function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
+  const peekAmount = 12
+  
+  return (
+    <div
+      className="absolute w-10 h-10 md:w-12 md:h-12"
+      style={{
+        top: '60%',
+        left: side === 'left' ? `-${peekAmount}%` : 'auto',
+        right: side === 'right' ? `-${peekAmount}%` : 'auto',
+        transform: `translateY(-50%) scaleX(${side === 'left' ? 1 : -1})`,
+      }}
+    >
+      <RunningAnimal variant={variant} legPhase={0} />
+    </div>
+  )
+}
+
+type IdleState = 'hidden' | 'peeking' | 'walking' | 'running'
+
+function TileAnimal({ isAnimating, isHovered }: { isAnimating: boolean; isHovered: boolean }) {
   const [animalVariant] = useState(() => Math.floor(Math.random() * 4))
   const [legPhase, setLegPhase] = useState(0)
   const [position, setPosition] = useState({ x: -20, y: 65 })
   const [direction, setDirection] = useState(1)
-  const [visible, setVisible] = useState(false)
+  const [idleState, setIdleState] = useState<IdleState>('hidden')
+  const [peekSide, setPeekSide] = useState<'left' | 'right'>('left')
   const animationRef = useRef<number | null>(null)
   const startTimeRef = useRef<number | null>(null)
+  const idleTimerRef = useRef<number | null>(null)
+  const walkStartPosRef = useRef({ x: 0, y: 65 })
+
+  const clearAnimations = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+      animationRef.current = null
+    }
+    startTimeRef.current = null
+  }
+
+  const runAway = () => {
+    clearAnimations()
+    setIdleState('running')
+    startTimeRef.current = null
+    
+    const exitDirection = position.x < 50 ? -1 : 1
+    setDirection(-exitDirection)
+    const startX = position.x
+    const targetX = exitDirection === 1 ? 120 : -20
+    
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp
+      const elapsed = timestamp - startTimeRef.current
+      
+      const phase = elapsed * 0.04
+      setLegPhase(phase)
+      
+      const progress = Math.min(elapsed / 400, 1)
+      const eased = progress * progress
+      
+      const newX = startX + (targetX - startX) * eased
+      const bounce = Math.sin(phase * 2) * 2
+      setPosition({ x: newX, y: 65 + bounce })
+      
+      if (elapsed < 400) {
+        animationRef.current = requestAnimationFrame(animate)
+      } else {
+        setIdleState('hidden')
+      }
+    }
+    
+    animationRef.current = requestAnimationFrame(animate)
+  }
+
+  useEffect(() => {
+    if (isHovered && idleState === 'walking') {
+      runAway()
+    } else if (isHovered && idleState === 'peeking') {
+      setIdleState('hidden')
+    }
+  }, [isHovered, idleState])
 
   useEffect(() => {
     if (isAnimating) {
-      setVisible(true)
+      clearAnimations()
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
+      }
+      
+      setIdleState('running')
       const newDirection = Math.random() > 0.5 ? 1 : -1
       setDirection(newDirection)
       setPosition({ x: newDirection === 1 ? -15 : 115, y: 65 })
@@ -208,21 +287,109 @@ function TileAnimal({ isAnimating }: { isAnimating: boolean }) {
         if (elapsed < 1000) {
           animationRef.current = requestAnimationFrame(animate)
         } else {
-          setVisible(false)
+          setIdleState('hidden')
         }
       }
       
       animationRef.current = requestAnimationFrame(animate)
     }
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
-      }
-    }
   }, [isAnimating])
 
-  if (!visible) return null
+  useEffect(() => {
+    if (idleState !== 'hidden' && idleState !== 'peeking') return
+    
+    const scheduleIdleAction = () => {
+      const delay = 3000 + Math.random() * 8000
+      
+      idleTimerRef.current = window.setTimeout(() => {
+        if (isAnimating || isHovered) {
+          scheduleIdleAction()
+          return
+        }
+        
+        const action = Math.random()
+        
+        if (action < 0.5) {
+          const side = Math.random() > 0.5 ? 'left' : 'right'
+          setPeekSide(side)
+          setIdleState('peeking')
+          
+          setTimeout(() => {
+            setIdleState('hidden')
+            scheduleIdleAction()
+          }, 2000 + Math.random() * 2000)
+        } else {
+          const walkDir = Math.random() > 0.5 ? 1 : -1
+          setDirection(walkDir)
+          const startX = walkDir === 1 ? -10 : 110
+          walkStartPosRef.current = { x: startX, y: 65 }
+          setPosition({ x: startX, y: 65 })
+          setIdleState('walking')
+          startTimeRef.current = null
+          
+          const animateWalk = (timestamp: number) => {
+            if (!startTimeRef.current) startTimeRef.current = timestamp
+            const elapsed = timestamp - startTimeRef.current
+            
+            const phase = elapsed * 0.008
+            setLegPhase(phase)
+            
+            const progress = Math.min(elapsed / 6000, 1)
+            
+            const startXPos = walkStartPosRef.current.x
+            const targetX = walkDir === 1 ? 110 : -10
+            const newX = startXPos + (targetX - startXPos) * progress
+            const bounce = Math.sin(phase * 2) * 1
+            setPosition({ x: newX, y: 65 + bounce })
+            
+            if (elapsed < 6000) {
+              animationRef.current = requestAnimationFrame(animateWalk)
+            } else {
+              setIdleState('hidden')
+              scheduleIdleAction()
+            }
+          }
+          
+          animationRef.current = requestAnimationFrame(animateWalk)
+        }
+      }, delay)
+    }
+    
+    if (idleState === 'hidden') {
+      scheduleIdleAction()
+    }
+    
+    return () => {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+      }
+    }
+  }, [idleState, isAnimating, isHovered])
+
+  useEffect(() => {
+    return () => {
+      clearAnimations()
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+      }
+    }
+  }, [])
+
+  if (idleState === 'peeking') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: peekSide === 'left' ? -10 : 10 }}
+        animate={{ opacity: 0.9, x: 0 }}
+        exit={{ opacity: 0, x: peekSide === 'left' ? -10 : 10 }}
+        transition={{ duration: 0.3 }}
+        className="pointer-events-none"
+      >
+        <PeekingAnimal variant={animalVariant} side={peekSide} />
+      </motion.div>
+    )
+  }
+
+  if (idleState === 'hidden') return null
 
   return (
     <motion.div
@@ -238,6 +405,66 @@ function TileAnimal({ isAnimating }: { isAnimating: boolean }) {
     >
       <RunningAnimal variant={animalVariant} legPhase={legPhase} />
     </motion.div>
+  )
+}
+
+function TallyTile({ 
+  tally, 
+  isAnimating, 
+  onIncrement, 
+  onStartLongPress, 
+  onCancelLongPress,
+  onOpenEdit 
+}: { 
+  tally: Tally
+  isAnimating: boolean
+  onIncrement: () => void
+  onStartLongPress: () => void
+  onCancelLongPress: () => void
+  onOpenEdit: () => void
+}) {
+  const [isHovered, setIsHovered] = useState(false)
+  
+  return (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={onIncrement}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        onOpenEdit()
+      }}
+      onTouchStart={onStartLongPress}
+      onTouchEnd={onCancelLongPress}
+      onTouchMove={onCancelLongPress}
+      onMouseDown={onStartLongPress}
+      onMouseUp={onCancelLongPress}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false)
+        onCancelLongPress()
+      }}
+      className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+    >
+      <Card 
+        className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden relative"
+        style={{ backgroundColor: tally.color }}
+      >
+        <TileAnimal isAnimating={isAnimating} isHovered={isHovered} />
+        <CardContent className="h-full flex flex-col items-center justify-center p-4">
+          <motion.span
+            key={tally.count}
+            initial={{ scale: 1.3, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-5xl md:text-6xl font-bold text-white drop-shadow-sm"
+          >
+            {tally.count}
+          </motion.span>
+          <span className="text-sm md:text-base font-medium text-white/90 mt-2 truncate w-full text-center">
+            {tally.title}
+          </span>
+        </CardContent>
+      </Card>
+    </motion.button>
   )
 }
 
@@ -433,43 +660,18 @@ function App() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleClick(tally.id)}
-                    onContextMenu={(e) => {
-                      e.preventDefault()
+                  <TallyTile
+                    tally={tally}
+                    isAnimating={animatingId === tally.id}
+                    onIncrement={() => handleClick(tally.id)}
+                    onStartLongPress={() => startLongPress(tally.id)}
+                    onCancelLongPress={cancelLongPress}
+                    onOpenEdit={() => {
                       const t = currentTallies.find(item => item.id === tally.id)
                       if (t) setEditingTitle(t.title)
                       setEditingId(tally.id)
                     }}
-                    onTouchStart={() => startLongPress(tally.id)}
-                    onTouchEnd={cancelLongPress}
-                    onTouchMove={cancelLongPress}
-                    onMouseDown={() => startLongPress(tally.id)}
-                    onMouseUp={cancelLongPress}
-                    onMouseLeave={cancelLongPress}
-                    className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
-                  >
-                    <Card 
-                      className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden relative"
-                      style={{ backgroundColor: tally.color }}
-                    >
-                      <TileAnimal isAnimating={animatingId === tally.id} />
-                      <CardContent className="h-full flex flex-col items-center justify-center p-4">
-                        <motion.span
-                          key={tally.count}
-                          initial={{ scale: 1.3, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          className="text-5xl md:text-6xl font-bold text-white drop-shadow-sm"
-                        >
-                          {tally.count}
-                        </motion.span>
-                        <span className="text-sm md:text-base font-medium text-white/90 mt-2 truncate w-full text-center">
-                          {tally.title}
-                        </span>
-                      </CardContent>
-                    </Card>
-                  </motion.button>
+                  />
                 )}
               </motion.div>
             ))}
