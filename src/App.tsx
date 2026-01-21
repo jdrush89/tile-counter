@@ -23,83 +23,213 @@ const COLORS = [
   'oklch(0.65 0.2 80)',
 ]
 
-const FACE_POSITIONS = [
-  { top: '8%', left: '8%' },
-  { top: '8%', right: '8%' },
-  { bottom: '8%', left: '8%' },
-  { bottom: '8%', right: '8%' },
-]
+function RunningDog({ legPhase }: { legPhase: number }) {
+  const frontLegAngle = Math.sin(legPhase) * 35
+  const backLegAngle = Math.sin(legPhase + Math.PI) * 35
+  const tailWag = Math.sin(legPhase * 2) * 15
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <ellipse cx="25" cy="20" rx="14" ry="9" fill="white" fillOpacity="0.9" />
+      <circle cx="38" cy="15" r="7" fill="white" fillOpacity="0.9" />
+      <ellipse cx="41" cy="14" rx="2.5" ry="3" fill="white" />
+      <circle cx="40" cy="13" r="1.5" fill="currentColor" fillOpacity="0.4" />
+      <ellipse cx="43" cy="16" rx="2" ry="1.5" fill="white" fillOpacity="0.7" />
+      <path d="M35 9 Q38 4 36 8" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <path d="M38 8 Q42 3 40 7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <g transform={`rotate(${frontLegAngle}, 30, 26)`}>
+        <line x1="30" y1="26" x2="30" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${frontLegAngle - 20}, 34, 26)`}>
+        <line x1="34" y1="26" x2="34" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${backLegAngle}, 16, 26)`}>
+        <line x1="16" y1="26" x2="16" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${backLegAngle - 20}, 20, 26)`}>
+        <line x1="20" y1="26" x2="20" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${tailWag}, 11, 18)`}>
+        <path d="M11 18 Q4 12 6 18" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+      </g>
+    </svg>
+  )
+}
 
-function HappyFace({ variant }: { variant: number }) {
+function RunningCat({ legPhase }: { legPhase: number }) {
+  const frontLegAngle = Math.sin(legPhase) * 30
+  const backLegAngle = Math.sin(legPhase + Math.PI) * 30
+  const tailCurve = Math.sin(legPhase) * 8
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <ellipse cx="25" cy="22" rx="12" ry="8" fill="white" fillOpacity="0.9" />
+      <circle cx="38" cy="16" r="6" fill="white" fillOpacity="0.9" />
+      <path d="M33 12 L31 6 L35 11" fill="white" fillOpacity="0.9" />
+      <path d="M41 10 L43 4 L38 9" fill="white" fillOpacity="0.9" />
+      <circle cx="36" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="40" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <ellipse cx="38" cy="18" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
+      <line x1="42" y1="16" x2="48" y2="14" stroke="white" strokeWidth="1" strokeLinecap="round" />
+      <line x1="42" y1="18" x2="48" y2="18" stroke="white" strokeWidth="1" strokeLinecap="round" />
+      <line x1="34" y1="16" x2="28" y2="14" stroke="white" strokeWidth="1" strokeLinecap="round" />
+      <line x1="34" y1="18" x2="28" y2="18" stroke="white" strokeWidth="1" strokeLinecap="round" />
+      <g transform={`rotate(${frontLegAngle}, 30, 28)`}>
+        <line x1="30" y1="28" x2="30" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${frontLegAngle - 15}, 33, 28)`}>
+        <line x1="33" y1="28" x2="33" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${backLegAngle}, 17, 28)`}>
+        <line x1="17" y1="28" x2="17" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${backLegAngle - 15}, 20, 28)`}>
+        <line x1="20" y1="28" x2="20" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <path d={`M13 20 Q${5 + tailCurve} 10 ${8 + tailCurve} 6`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function RunningBunny({ legPhase }: { legPhase: number }) {
+  const hop = Math.abs(Math.sin(legPhase)) * 4
+  const earWiggle = Math.sin(legPhase * 2) * 8
+  const legKick = Math.sin(legPhase) * 25
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${-hop})`}>
+        <ellipse cx="22" cy="26" rx="10" ry="8" fill="white" fillOpacity="0.9" />
+        <circle cx="34" cy="20" r="6" fill="white" fillOpacity="0.9" />
+        <g transform={`rotate(${earWiggle - 10}, 32, 20)`}>
+          <ellipse cx="30" cy="8" rx="2.5" ry="8" fill="white" fillOpacity="0.9" />
+          <ellipse cx="30" cy="8" rx="1.2" ry="5" fill="currentColor" fillOpacity="0.15" />
+        </g>
+        <g transform={`rotate(${-earWiggle + 10}, 36, 20)`}>
+          <ellipse cx="38" cy="8" rx="2.5" ry="8" fill="white" fillOpacity="0.9" />
+          <ellipse cx="38" cy="8" rx="1.2" ry="5" fill="currentColor" fillOpacity="0.15" />
+        </g>
+        <circle cx="32" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <circle cx="37" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <ellipse cx="34.5" cy="22" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
+        <circle cx="12" cy="26" r="4" fill="white" fillOpacity="0.9" />
+        <g transform={`rotate(${legKick}, 28, 32)`}>
+          <ellipse cx="28" cy="36" rx="2" ry="3" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-legKick}, 18, 32)`}>
+          <ellipse cx="16" cy="36" rx="3" ry="2.5" fill="white" fillOpacity="0.9" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
+function RunningBird({ legPhase }: { legPhase: number }) {
+  const wingFlap = Math.sin(legPhase * 2) * 25
+  const bob = Math.sin(legPhase) * 2
+  const legMove = Math.sin(legPhase) * 20
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${bob})`}>
+        <ellipse cx="25" cy="24" rx="10" ry="8" fill="white" fillOpacity="0.9" />
+        <circle cx="36" cy="18" r="6" fill="white" fillOpacity="0.9" />
+        <path d="M40 17 L48 16 L40 19 Z" fill="white" fillOpacity="0.8" />
+        <circle cx="38" cy="16" r="1.5" fill="currentColor" fillOpacity="0.4" />
+        <g transform={`rotate(${-wingFlap}, 25, 20)`}>
+          <ellipse cx="20" cy="14" rx="8" ry="4" fill="white" fillOpacity="0.85" />
+        </g>
+        <g transform={`rotate(${wingFlap}, 25, 20)`}>
+          <ellipse cx="28" cy="14" rx="8" ry="4" fill="white" fillOpacity="0.7" />
+        </g>
+        <path d="M15 26 Q10 24 12 28" fill="white" fillOpacity="0.8" />
+        <path d="M14 27 Q8 26 11 30" fill="white" fillOpacity="0.7" />
+        <path d="M16 28 Q12 28 14 31" fill="white" fillOpacity="0.6" />
+        <g transform={`rotate(${legMove}, 24, 30)`}>
+          <line x1="24" y1="30" x2="22" y2="38" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M22 38 L19 39 M22 38 L21 40" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+        </g>
+        <g transform={`rotate(${-legMove}, 28, 30)`}>
+          <line x1="28" y1="30" x2="26" y2="38" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M26 38 L23 39 M26 38 L25 40" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
+function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant % 4) {
     case 0:
-      return (
-        <svg viewBox="0 0 40 40" className="w-full h-full">
-          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
-          <circle cx="13" cy="16" r="3" fill="white" />
-          <circle cx="27" cy="16" r="3" fill="white" />
-          <path d="M10 24 Q20 34 30 24" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        </svg>
-      )
+      return <RunningDog legPhase={legPhase} />
     case 1:
-      return (
-        <svg viewBox="0 0 40 40" className="w-full h-full">
-          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
-          <line x1="9" y1="12" x2="17" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-          <line x1="17" y1="12" x2="9" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-          <line x1="23" y1="12" x2="31" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-          <line x1="31" y1="12" x2="23" y2="18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-          <ellipse cx="20" cy="28" rx="6" ry="5" fill="white" />
-        </svg>
-      )
+      return <RunningCat legPhase={legPhase} />
     case 2:
-      return (
-        <svg viewBox="0 0 40 40" className="w-full h-full">
-          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
-          <circle cx="13" cy="15" r="3.5" fill="white" />
-          <circle cx="27" cy="15" r="3.5" fill="white" />
-          <circle cx="14" cy="14" r="1.5" fill="currentColor" fillOpacity="0.3" />
-          <circle cx="28" cy="14" r="1.5" fill="currentColor" fillOpacity="0.3" />
-          <path d="M12 26 Q20 32 28 26" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <circle cx="8" cy="24" r="3" fill="white" fillOpacity="0.4" />
-          <circle cx="32" cy="24" r="3" fill="white" fillOpacity="0.4" />
-        </svg>
-      )
+      return <RunningBunny legPhase={legPhase} />
     case 3:
     default:
-      return (
-        <svg viewBox="0 0 40 40" className="w-full h-full">
-          <circle cx="20" cy="20" r="18" fill="white" fillOpacity="0.25" />
-          <path d="M9 14 L13 10 L17 14" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M23 14 L27 10 L31 14" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M11 25 Q20 33 29 25" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <line x1="20" y1="4" x2="20" y2="1" stroke="white" strokeWidth="2" strokeLinecap="round" />
-          <line x1="28" y1="6" x2="30" y2="3" stroke="white" strokeWidth="2" strokeLinecap="round" />
-          <line x1="12" y1="6" x2="10" y2="3" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      )
+      return <RunningBird legPhase={legPhase} />
   }
 }
 
-function TileFace({ isAnimating, tallyId }: { isAnimating: boolean; tallyId: string }) {
-  const [faceVariant] = useState(() => Math.floor(Math.random() * 4))
-  const [positionIndex] = useState(() => Math.floor(Math.random() * FACE_POSITIONS.length))
-  
-  const position = FACE_POSITIONS[positionIndex]
+function TileAnimal({ isAnimating }: { isAnimating: boolean }) {
+  const [animalVariant] = useState(() => Math.floor(Math.random() * 4))
+  const [legPhase, setLegPhase] = useState(0)
+  const [position, setPosition] = useState({ x: 20, y: 65 })
+  const [direction, setDirection] = useState(1)
+  const animationRef = useRef<number | null>(null)
+  const startTimeRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (isAnimating) {
+      const newDirection = Math.random() > 0.5 ? 1 : -1
+      setDirection(newDirection)
+      setPosition({ x: newDirection === 1 ? 15 : 85, y: 65 })
+      startTimeRef.current = null
+      
+      const animate = (timestamp: number) => {
+        if (!startTimeRef.current) startTimeRef.current = timestamp
+        const elapsed = timestamp - startTimeRef.current
+        
+        const phase = elapsed * 0.025
+        setLegPhase(phase)
+        
+        const progress = Math.min(elapsed / 1000, 1)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        
+        const startX = newDirection === 1 ? 15 : 85
+        const targetX = newDirection === 1 ? 85 : 15
+        const newX = startX + (targetX - startX) * eased
+        const bounce = Math.sin(phase * 2) * 2
+        setPosition({ x: newX, y: 65 + bounce })
+        
+        if (elapsed < 1000) {
+          animationRef.current = requestAnimationFrame(animate)
+        }
+      }
+      
+      animationRef.current = requestAnimationFrame(animate)
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+    }
+  }, [isAnimating])
 
   return (
     <motion.div
-      className="absolute w-12 h-12 md:w-16 md:h-16"
-      style={position}
-      initial={{ scale: 1, rotate: 0 }}
-      animate={isAnimating ? {
-        scale: [1, 1.4, 1.2, 1.5, 1],
-        rotate: [0, -15, 15, -10, 0],
-        y: [0, -8, 0, -5, 0]
-      } : { scale: 1, rotate: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="absolute w-14 h-14 md:w-18 md:h-18"
+      style={{ 
+        left: `${position.x}%`, 
+        top: `${position.y}%`,
+        transform: `translateX(-50%) translateY(-50%) scaleX(${direction})`,
+      }}
+      initial={{ opacity: 0.9 }}
+      animate={{ opacity: 0.95 }}
     >
-      <HappyFace variant={faceVariant} />
+      <RunningAnimal variant={animalVariant} legPhase={legPhase} />
     </motion.div>
   )
 }
@@ -159,7 +289,7 @@ function App() {
       (current ?? []).map((t) => (t.id === id ? { ...t, count: t.count + 1 } : t))
     )
     setAnimatingId(id)
-    setTimeout(() => setAnimatingId(null), 500)
+    setTimeout(() => setAnimatingId(null), 1000)
   }
 
   const decrementTally = (id: string) => {
@@ -317,7 +447,7 @@ function App() {
                       className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden relative"
                       style={{ backgroundColor: tally.color }}
                     >
-                      <TileFace isAnimating={animatingId === tally.id} tallyId={tally.id} />
+                      <TileAnimal isAnimating={animatingId === tally.id} />
                       <CardContent className="h-full flex flex-col items-center justify-center p-4">
                         <motion.span
                           key={tally.count}
