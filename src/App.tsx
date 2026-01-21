@@ -61,6 +61,7 @@ const UNLOCKABLE_ANIMALS = [
 
 const PREMIUM_ANIMALS = [
   { id: 9, name: 'Griffin', price: 2.99 },
+  { id: 10, name: 'Cthulhu', price: 3.99 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
@@ -414,6 +415,51 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningCthulhu({ legPhase }: { legPhase: number }) {
+  const tentacleWave1 = Math.sin(legPhase) * 8
+  const tentacleWave2 = Math.sin(legPhase + 0.5) * 8
+  const tentacleWave3 = Math.sin(legPhase + 1) * 8
+  const tentacleWave4 = Math.sin(legPhase + 1.5) * 8
+  const wingFlap = Math.sin(legPhase * 1.2) * 20
+  const legSwing = Math.sin(legPhase) * 25
+  const bodyBob = Math.sin(legPhase * 2) * 2
+  
+  return (
+    <svg viewBox="0 0 55 45" className="w-full h-full">
+      <g transform={`translate(0, ${bodyBob})`}>
+        <ellipse cx="26" cy="20" rx="12" ry="10" fill="white" fillOpacity="0.9" />
+        <g transform={`rotate(${-wingFlap}, 26, 16)`}>
+          <path d="M26 16 Q18 4 8 2 Q14 8 12 14 Q18 10 22 14 Q24 10 26 16" fill="white" fillOpacity="0.75" />
+          <path d="M12 14 Q8 10 6 12" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.6" />
+        </g>
+        <g transform={`rotate(${wingFlap}, 26, 16)`}>
+          <path d="M26 16 Q34 4 44 2 Q38 8 40 14 Q34 10 30 14 Q28 10 26 16" fill="white" fillOpacity="0.7" />
+          <path d="M40 14 Q44 10 46 12" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.6" />
+        </g>
+        <ellipse cx="26" cy="14" rx="8" ry="7" fill="white" fillOpacity="0.9" />
+        <circle cx="22" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
+        <circle cx="30" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
+        <circle cx="22" cy="12" r="1" fill="currentColor" fillOpacity="0.5" />
+        <circle cx="30" cy="12" r="1" fill="currentColor" fillOpacity="0.5" />
+        <path d={`M22 18 Q${20 + tentacleWave1} 28 ${18 + tentacleWave1} 38`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+        <path d={`M25 19 Q${24 + tentacleWave2} 30 ${22 + tentacleWave2} 40`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+        <path d={`M27 19 Q${28 + tentacleWave3} 30 ${30 + tentacleWave3} 40`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+        <path d={`M30 18 Q${32 + tentacleWave4} 28 ${34 + tentacleWave4} 38`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+        <path d={`M20 17 Q${16 + tentacleWave2 * 0.5} 22 ${14 + tentacleWave2 * 0.5} 28`} stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
+        <path d={`M32 17 Q${36 + tentacleWave3 * 0.5} 22 ${38 + tentacleWave3 * 0.5} 28`} stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
+        <g transform={`rotate(${legSwing}, 20, 28)`}>
+          <line x1="20" y1="28" x2="18" y2="40" stroke="white" strokeWidth="3" strokeLinecap="round" />
+          <ellipse cx="17" cy="41" rx="2.5" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 32, 28)`}>
+          <line x1="32" y1="28" x2="34" y2="40" stroke="white" strokeWidth="3" strokeLinecap="round" />
+          <ellipse cx="35" cy="41" rx="2.5" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -436,6 +482,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <RunningDragon legPhase={legPhase} />
     case 9:
       return <RunningGriffin legPhase={legPhase} />
+    case 10:
+      return <RunningCthulhu legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
@@ -443,7 +491,7 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
 
 function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
   const peekAmount = 12
-  const isLargeAnimal = variant === 8 || variant === 9
+  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10
   
   return (
     <div
@@ -656,7 +704,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
 
   if (idleState === 'hidden') return null
 
-  const isLargeAnimal = animalType === 8 || animalType === 9
+  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10
   
   return (
     <motion.div
