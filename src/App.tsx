@@ -240,7 +240,9 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
         const newDirection = Math.random() > 0.5 ? 1 : -1
         setDirection(newDirection)
         const yOffset = totalAnimals > 1 ? (animalIndex % 3) * 8 - 8 : 0
-        setPosition({ x: newDirection === 1 ? -15 : 115, y: 65 + yOffset })
+        const startX = newDirection === 1 ? -25 : 125
+        const targetX = newDirection === 1 ? 125 : -25
+        setPosition({ x: startX, y: 65 + yOffset })
         startTimeRef.current = null
         
         const animate = (timestamp: number) => {
@@ -250,16 +252,14 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
           const phase = elapsed * 0.025
           setLegPhase(phase)
           
-          const progress = Math.min(elapsed / 1000, 1)
+          const progress = Math.min(elapsed / 1200, 1)
           const eased = 1 - Math.pow(1 - progress, 3)
           
-          const startX = newDirection === 1 ? -15 : 115
-          const targetX = newDirection === 1 ? 115 : -15
           const newX = startX + (targetX - startX) * eased
           const bounce = Math.sin(phase * 2) * 2
           setPosition({ x: newX, y: 65 + yOffset + bounce })
           
-          if (elapsed < 1000) {
+          if (progress < 1) {
             animationRef.current = requestAnimationFrame(animate)
           } else {
             setIdleState('hidden')
@@ -297,7 +297,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
         } else {
           const walkDir = Math.random() > 0.5 ? 1 : -1
           setDirection(walkDir)
-          const startX = walkDir === 1 ? -10 : 110
+          const startX = walkDir === 1 ? -25 : 125
           walkStartPosRef.current = { x: startX, y: 65 }
           setPosition({ x: startX, y: 65 })
           setIdleState('walking')
@@ -306,7 +306,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
           
           let currentSpeed = 1
           let currentX = startX
-          const targetX = walkDir === 1 ? 110 : -10
+          const targetX = walkDir === 1 ? 125 : -25
           const totalDistance = Math.abs(targetX - startX)
           let lastTimestamp: number | null = null
           
@@ -542,7 +542,7 @@ function App() {
     setTimeout(() => {
       setAnimatingId(null)
       setAnimatingCount(0)
-    }, 1500)
+    }, 1800)
   }
 
   const decrementTally = (id: string) => {
