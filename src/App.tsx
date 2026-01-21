@@ -539,10 +539,16 @@ function App() {
     )
     setAnimatingId(id)
     setAnimatingCount(newCount)
+    
+    const maxAnimals = Math.min(newCount, 20)
+    const lastAnimalStaggerDelay = (maxAnimals - 1) * 120
+    const animationDuration = 1200
+    const totalAnimationTime = lastAnimalStaggerDelay + animationDuration + 100
+    
     setTimeout(() => {
       setAnimatingId(null)
       setAnimatingCount(0)
-    }, 1800)
+    }, totalAnimationTime)
   }
 
   const decrementTally = (id: string) => {
