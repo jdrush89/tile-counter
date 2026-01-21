@@ -820,6 +820,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false)
   const [animalToPurchase, setAnimalToPurchase] = useState<{ id: number; name: string; price: number } | null>(null)
+  const [purchaseTallyId, setPurchaseTallyId] = useState<string | null>(null)
 
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
@@ -962,6 +963,7 @@ function TallyApp({ user }: { user: UserInfo }) {
     
     if ('price' in animal && !currentPurchased.includes(animalId)) {
       setAnimalToPurchase(animal as { id: number; name: string; price: number })
+      setPurchaseTallyId(tallyId)
       setPurchaseDialogOpen(true)
       return
     }
@@ -973,11 +975,17 @@ function TallyApp({ user }: { user: UserInfo }) {
     if (!animalToPurchase) return
     
     setPurchasedAnimals((current) => [...(current ?? []), animalToPurchase.id])
+    
+    if (purchaseTallyId) {
+      updateTallyAnimal(purchaseTallyId, animalToPurchase.id)
+    }
+    
     toast.success(`${animalToPurchase.name} purchased!`, {
       description: 'You can now use this animal on any tally tile.',
     })
     setPurchaseDialogOpen(false)
     setAnimalToPurchase(null)
+    setPurchaseTallyId(null)
   }
 
   const deleteTally = (id: string) => {
@@ -1321,6 +1329,7 @@ function TallyApp({ user }: { user: UserInfo }) {
                   onClick={() => {
                     setPurchaseDialogOpen(false)
                     setAnimalToPurchase(null)
+                    setPurchaseTallyId(null)
                   }}
                 >
                   Cancel
