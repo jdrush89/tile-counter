@@ -175,16 +175,18 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
 function TileAnimal({ isAnimating }: { isAnimating: boolean }) {
   const [animalVariant] = useState(() => Math.floor(Math.random() * 4))
   const [legPhase, setLegPhase] = useState(0)
-  const [position, setPosition] = useState({ x: 20, y: 65 })
+  const [position, setPosition] = useState({ x: -20, y: 65 })
   const [direction, setDirection] = useState(1)
+  const [visible, setVisible] = useState(false)
   const animationRef = useRef<number | null>(null)
   const startTimeRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (isAnimating) {
+      setVisible(true)
       const newDirection = Math.random() > 0.5 ? 1 : -1
       setDirection(newDirection)
-      setPosition({ x: newDirection === 1 ? 15 : 85, y: 65 })
+      setPosition({ x: newDirection === 1 ? -15 : 115, y: 65 })
       startTimeRef.current = null
       
       const animate = (timestamp: number) => {
@@ -197,14 +199,16 @@ function TileAnimal({ isAnimating }: { isAnimating: boolean }) {
         const progress = Math.min(elapsed / 1000, 1)
         const eased = 1 - Math.pow(1 - progress, 3)
         
-        const startX = newDirection === 1 ? 15 : 85
-        const targetX = newDirection === 1 ? 85 : 15
+        const startX = newDirection === 1 ? -15 : 115
+        const targetX = newDirection === 1 ? 115 : -15
         const newX = startX + (targetX - startX) * eased
         const bounce = Math.sin(phase * 2) * 2
         setPosition({ x: newX, y: 65 + bounce })
         
         if (elapsed < 1000) {
           animationRef.current = requestAnimationFrame(animate)
+        } else {
+          setVisible(false)
         }
       }
       
@@ -218,16 +222,19 @@ function TileAnimal({ isAnimating }: { isAnimating: boolean }) {
     }
   }, [isAnimating])
 
+  if (!visible) return null
+
   return (
     <motion.div
-      className="absolute w-14 h-14 md:w-18 md:h-18"
+      className="absolute w-14 h-14 md:w-18 md:h-18 pointer-events-none"
       style={{ 
         left: `${position.x}%`, 
         top: `${position.y}%`,
         transform: `translateX(-50%) translateY(-50%) scaleX(${direction})`,
       }}
-      initial={{ opacity: 0.9 }}
+      initial={{ opacity: 0 }}
       animate={{ opacity: 0.95 }}
+      exit={{ opacity: 0 }}
     >
       <RunningAnimal variant={animalVariant} legPhase={legPhase} />
     </motion.div>
