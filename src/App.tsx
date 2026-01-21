@@ -726,7 +726,7 @@ function TallyApp({ user }: { user: UserInfo }) {
       setIsLoaded(true)
       const timer = setTimeout(() => {
         setShowNewButton(true)
-      }, 50)
+      }, 200)
       return () => clearTimeout(timer)
     }
   }, [tallies])
