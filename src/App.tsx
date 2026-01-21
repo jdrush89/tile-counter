@@ -681,7 +681,7 @@ function TallyTile({
           >
             {tally.count}
           </motion.span>
-          <span className="text-sm md:text-base font-medium text-white/90 mt-2 truncate w-full text-center">
+          <span className="text-sm md:text-base font-medium text-white/90 mt-2 w-full text-center line-clamp-2 break-words px-1">
             {tally.title}
           </span>
         </CardContent>
@@ -911,121 +911,123 @@ function TallyApp({ user }: { user: UserInfo }) {
               >
                 {editingId === tally.id ? (
                   <Card className="aspect-square border-2 border-primary/50 bg-card overflow-hidden">
-                    <CardContent className="h-full flex flex-col items-center justify-between p-4 gap-3">
-                      <div className="flex flex-col items-center gap-2 w-full">
-                        <span className="text-2xl md:text-3xl font-bold text-foreground">
-                          {tally.count}
-                        </span>
-                        
-                        {isEditingName ? (
-                          <form 
-                            onSubmit={(e) => {
-                              e.preventDefault()
-                              updateTallyTitle(tally.id, editingTitle)
-                            }}
-                            className="flex gap-1 w-full"
-                          >
-                            <Input
-                              id="edit-title"
-                              value={editingTitle}
-                              onChange={(e) => setEditingTitle(e.target.value)}
-                              className="h-7 text-xs"
-                              autoFocus
-                            />
-                            <Button
-                              type="submit"
-                              size="icon"
-                              className="h-7 w-7 shrink-0"
+                    <CardContent className="h-full overflow-y-auto p-3 md:p-4">
+                      <div className="flex flex-col items-center gap-2 md:gap-3 min-h-full justify-between">
+                        <div className="flex flex-col items-center gap-1.5 md:gap-2 w-full">
+                          <span className="text-2xl md:text-3xl font-bold text-foreground">
+                            {tally.count}
+                          </span>
+                          
+                          {isEditingName ? (
+                            <form 
+                              onSubmit={(e) => {
+                                e.preventDefault()
+                                updateTallyTitle(tally.id, editingTitle)
+                              }}
+                              className="flex gap-1 w-full"
                             >
-                              <Check size={12} weight="bold" />
-                            </Button>
-                          </form>
-                        ) : (
-                          <button
-                            onClick={() => setIsEditingName(true)}
-                            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            <span className="truncate max-w-[80px]">{tally.title}</span>
-                            <PencilSimple size={12} />
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-3 w-full">
-                        <div className="flex justify-center gap-1.5">
-                          {COLORS.map((color) => (
+                              <Input
+                                id="edit-title"
+                                value={editingTitle}
+                                onChange={(e) => setEditingTitle(e.target.value)}
+                                className="h-7 text-xs"
+                                autoFocus
+                              />
+                              <Button
+                                type="submit"
+                                size="icon"
+                                className="h-7 w-7 shrink-0"
+                              >
+                                <Check size={12} weight="bold" />
+                              </Button>
+                            </form>
+                          ) : (
                             <button
-                              key={color}
-                              onClick={() => updateTallyColor(tally.id, color)}
-                              className={`w-6 h-6 rounded-full transition-all ${tally.color === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-105'}`}
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
+                              onClick={() => setIsEditingName(true)}
+                              className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
+                            >
+                              <span className="line-clamp-2 break-words">{tally.title}</span>
+                              <PencilSimple size={12} className="shrink-0" />
+                            </button>
+                          )}
                         </div>
 
-                        <div className="flex justify-center">
-                          <Select
-                            value={String(tally.animalType ?? 0)}
-                            onValueChange={(value) => updateTallyAnimal(tally.id, Number(value))}
-                          >
-                            <SelectTrigger className="w-full max-w-[160px] h-8 text-xs">
-                              <SelectValue placeholder="Select animal" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ALL_ANIMALS.map((animal) => {
-                                const isUnlocked = animal.unlockAt <= totalTallies
-                                return (
-                                  <SelectItem
-                                    key={animal.id}
-                                    value={String(animal.id)}
-                                    disabled={!isUnlocked}
-                                    className="text-xs"
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      {isUnlocked ? (
-                                        <span>{animal.name}</span>
-                                      ) : (
-                                        <span className="flex items-center gap-1.5 text-muted-foreground">
-                                          <Lock size={12} />
-                                          {animal.name} ({animal.unlockAt})
-                                        </span>
-                                      )}
-                                    </span>
-                                  </SelectItem>
-                                )
-                              })}
-                            </SelectContent>
-                          </Select>
+                        <div className="flex flex-col gap-2 md:gap-3 w-full">
+                          <div className="flex justify-center gap-1 md:gap-1.5 flex-wrap">
+                            {COLORS.map((color) => (
+                              <button
+                                key={color}
+                                onClick={() => updateTallyColor(tally.id, color)}
+                                className={`w-5 h-5 md:w-6 md:h-6 rounded-full transition-all ${tally.color === color ? 'ring-2 ring-offset-1 md:ring-offset-2 ring-primary scale-110' : 'hover:scale-105'}`}
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+
+                          <div className="flex justify-center">
+                            <Select
+                              value={String(tally.animalType ?? 0)}
+                              onValueChange={(value) => updateTallyAnimal(tally.id, Number(value))}
+                            >
+                              <SelectTrigger className="w-full max-w-[140px] md:max-w-[160px] h-7 md:h-8 text-xs">
+                                <SelectValue placeholder="Select animal" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ALL_ANIMALS.map((animal) => {
+                                  const isUnlocked = animal.unlockAt <= totalTallies
+                                  return (
+                                    <SelectItem
+                                      key={animal.id}
+                                      value={String(animal.id)}
+                                      disabled={!isUnlocked}
+                                      className="text-xs"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        {isUnlocked ? (
+                                          <span>{animal.name}</span>
+                                        ) : (
+                                          <span className="flex items-center gap-1.5 text-muted-foreground">
+                                            <Lock size={12} />
+                                            {animal.name} ({animal.unlockAt})
+                                          </span>
+                                        )}
+                                      </span>
+                                    </SelectItem>
+                                  )
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-center gap-2 w-full">
-                        <div className="flex gap-2">
+                        
+                        <div className="flex flex-col items-center gap-1.5 md:gap-2 w-full">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => decrementTally(tally.id)}
+                              className="h-8 w-8 md:h-9 md:w-9"
+                            >
+                              <Minus size={14} weight="bold" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => deleteTally(tally.id)}
+                              className="h-8 w-8 md:h-9 md:w-9"
+                            >
+                              <Trash size={14} weight="bold" />
+                            </Button>
+                          </div>
                           <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => decrementTally(tally.id)}
-                            className="h-9 w-9"
+                            variant="ghost"
+                            size="sm"
+                            onClick={closeEditMode}
+                            className="text-xs h-6 md:h-7"
                           >
-                            <Minus size={16} weight="bold" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => deleteTally(tally.id)}
-                            className="h-9 w-9"
-                          >
-                            <Trash size={16} weight="bold" />
+                            Done
                           </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={closeEditMode}
-                          className="text-xs h-7"
-                        >
-                          Done
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>
