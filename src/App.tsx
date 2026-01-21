@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash, Minus, Check, PencilSimple } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Dog, Cat, Bird, Rabbit } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Tally {
@@ -12,6 +12,7 @@ interface Tally {
   title: string
   count: number
   color: string
+  animalType: number
 }
 
 const COLORS = [
@@ -21,6 +22,13 @@ const COLORS = [
   'oklch(0.65 0.2 330)',
   'oklch(0.65 0.2 200)',
   'oklch(0.65 0.2 80)',
+]
+
+const ANIMALS = [
+  { id: 0, name: 'Dog' },
+  { id: 1, name: 'Cat' },
+  { id: 2, name: 'Bunny' },
+  { id: 3, name: 'Bird' },
 ]
 
 function RunningDog({ legPhase }: { legPhase: number }) {
@@ -192,8 +200,7 @@ function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'rig
 
 type IdleState = 'hidden' | 'peeking' | 'walking' | 'running'
 
-function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isAnimating: boolean; isHovered: boolean; animalIndex: number; totalAnimals: number }) {
-  const [animalVariant] = useState(() => Math.floor(Math.random() * 4))
+function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalType }: { isAnimating: boolean; isHovered: boolean; animalIndex: number; totalAnimals: number; animalType: number }) {
   const [legPhase, setLegPhase] = useState(0)
   const [position, setPosition] = useState({ x: -20, y: 65 })
   const [direction, setDirection] = useState(1)
@@ -380,7 +387,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
         transition={{ duration: 0.3 }}
         className="absolute inset-0 pointer-events-none overflow-visible"
       >
-        <PeekingAnimal variant={animalVariant} side={peekSide} />
+        <PeekingAnimal variant={animalType} side={peekSide} />
       </motion.div>
     )
   }
@@ -399,7 +406,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
       animate={{ opacity: 0.95 }}
       exit={{ opacity: 0 }}
     >
-      <RunningAnimal variant={animalVariant} legPhase={legPhase} />
+      <RunningAnimal variant={animalType} legPhase={legPhase} />
     </motion.div>
   )
 }
@@ -423,6 +430,7 @@ function TallyTile({
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const maxAnimals = Math.min(animatingCount, 20)
+  const animalType = tally.animalType ?? 0
   
   return (
     <motion.button
@@ -456,10 +464,11 @@ function TallyTile({
               isHovered={isHovered} 
               animalIndex={i}
               totalAnimals={maxAnimals}
+              animalType={animalType}
             />
           ))
         ) : (
-          <TileAnimal isAnimating={false} isHovered={isHovered} animalIndex={0} totalAnimals={1} />
+          <TileAnimal isAnimating={false} isHovered={isHovered} animalIndex={0} totalAnimals={1} animalType={animalType} />
         )}
         <CardContent className="h-full flex flex-col items-center justify-center p-4">
           <motion.span
@@ -522,9 +531,10 @@ function App() {
   const addTally = () => {
     if (!newTitle.trim()) return
     const color = COLORS[currentTallies.length % COLORS.length]
+    const animalType = Math.floor(Math.random() * 4)
     setTallies((current) => [
       ...(current ?? []),
-      { id: Date.now().toString(), title: newTitle.trim(), count: 0, color }
+      { id: Date.now().toString(), title: newTitle.trim(), count: 0, color, animalType }
     ])
     setNewTitle('')
     setDialogOpen(false)
@@ -563,6 +573,18 @@ function App() {
       (current ?? []).map((t) => (t.id === id ? { ...t, title: newTitleValue.trim() } : t))
     )
     setIsEditingName(false)
+  }
+
+  const updateTallyColor = (id: string, color: string) => {
+    setTallies((current) =>
+      (current ?? []).map((t) => (t.id === id ? { ...t, color } : t))
+    )
+  }
+
+  const updateTallyAnimal = (id: string, animalType: number) => {
+    setTallies((current) =>
+      (current ?? []).map((t) => (t.id === id ? { ...t, animalType } : t))
+    )
   }
 
   const deleteTally = (id: string) => {
@@ -617,71 +639,104 @@ function App() {
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               >
                 {editingId === tally.id ? (
-                  <Card className="aspect-square border-2 border-primary/50 bg-card">
-                    <CardContent className="h-full flex flex-col items-center justify-center gap-2 p-3">
-                      <span className="text-3xl md:text-4xl font-bold text-foreground">
-                        {tally.count}
-                      </span>
-                      
-                      {isEditingName ? (
-                        <form 
-                          onSubmit={(e) => {
-                            e.preventDefault()
-                            updateTallyTitle(tally.id, editingTitle)
-                          }}
-                          className="flex gap-1 w-full"
-                        >
-                          <Input
-                            id="edit-title"
-                            value={editingTitle}
-                            onChange={(e) => setEditingTitle(e.target.value)}
-                            className="h-8 text-sm"
-                            autoFocus
-                          />
-                          <Button
-                            type="submit"
-                            size="icon"
-                            className="h-8 w-8 shrink-0"
+                  <Card className="aspect-square border-2 border-primary/50 bg-card overflow-hidden">
+                    <CardContent className="h-full flex flex-col items-center justify-between p-3">
+                      <div className="flex flex-col items-center gap-1 w-full">
+                        <span className="text-2xl md:text-3xl font-bold text-foreground">
+                          {tally.count}
+                        </span>
+                        
+                        {isEditingName ? (
+                          <form 
+                            onSubmit={(e) => {
+                              e.preventDefault()
+                              updateTallyTitle(tally.id, editingTitle)
+                            }}
+                            className="flex gap-1 w-full"
                           >
-                            <Check size={14} weight="bold" />
-                          </Button>
-                        </form>
-                      ) : (
-                        <button
-                          onClick={() => setIsEditingName(true)}
-                          className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <span className="truncate max-w-[100px]">{tally.title}</span>
-                          <PencilSimple size={14} />
-                        </button>
-                      )}
+                            <Input
+                              id="edit-title"
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              className="h-7 text-xs"
+                              autoFocus
+                            />
+                            <Button
+                              type="submit"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                            >
+                              <Check size={12} weight="bold" />
+                            </Button>
+                          </form>
+                        ) : (
+                          <button
+                            onClick={() => setIsEditingName(true)}
+                            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <span className="truncate max-w-[80px]">{tally.title}</span>
+                            <PencilSimple size={12} />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="flex justify-center gap-1.5">
+                          {COLORS.map((color) => (
+                            <button
+                              key={color}
+                              onClick={() => updateTallyColor(tally.id, color)}
+                              className={`w-6 h-6 rounded-full transition-all ${tally.color === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-105'}`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+
+                        <div className="flex justify-center gap-1">
+                          {ANIMALS.map((animal) => {
+                            const AnimalIcon = animal.id === 0 ? Dog : animal.id === 1 ? Cat : animal.id === 2 ? Rabbit : Bird
+                            const isSelected = (tally.animalType ?? 0) === animal.id
+                            return (
+                              <button
+                                key={animal.id}
+                                onClick={() => updateTallyAnimal(tally.id, animal.id)}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSelected ? 'bg-primary text-primary-foreground scale-110' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
+                              >
+                                <AnimalIcon size={18} weight={isSelected ? 'fill' : 'regular'} />
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
                       
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex flex-col items-center gap-1.5 w-full">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => decrementTally(tally.id)}
+                            className="h-9 w-9"
+                          >
+                            <Minus size={16} weight="bold" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => deleteTally(tally.id)}
+                            className="h-9 w-9"
+                          >
+                            <Trash size={16} weight="bold" />
+                          </Button>
+                        </div>
                         <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => decrementTally(tally.id)}
-                          className="h-10 w-10"
+                          variant="ghost"
+                          size="sm"
+                          onClick={closeEditMode}
+                          className="text-xs h-7"
                         >
-                          <Minus size={18} weight="bold" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => deleteTally(tally.id)}
-                          className="h-10 w-10"
-                        >
-                          <Trash size={18} weight="bold" />
+                          Done
                         </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={closeEditMode}
-                        className="text-xs mt-1"
-                      >
-                        Done
-                      </Button>
                     </CardContent>
                   </Card>
                 ) : (
