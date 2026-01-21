@@ -681,7 +681,12 @@ function TallyTile({
           >
             {tally.count}
           </motion.span>
-          <span className="text-sm md:text-base font-medium text-white/90 mt-2 w-full text-center line-clamp-2 break-words px-1">
+          <span 
+            className="font-medium text-white/90 mt-2 w-full text-center break-words px-1 leading-tight"
+            style={{
+              fontSize: tally.title.length > 40 ? '0.65rem' : tally.title.length > 25 ? '0.75rem' : tally.title.length > 15 ? '0.85rem' : '0.875rem',
+            }}
+          >
             {tally.title}
           </span>
         </CardContent>
