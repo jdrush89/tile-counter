@@ -701,6 +701,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [animatingCount, setAnimatingCount] = useState(0)
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   const currentTallies = tallies ?? []
   
@@ -718,6 +719,31 @@ function TallyApp({ user }: { user: UserInfo }) {
     UNLOCKABLE_ANIMALS.find(a => a.unlockAt > totalTallies),
     [totalTallies]
   )
+
+  useEffect(() => {
+    if (tallies !== undefined) {
+      setIsLoaded(true)
+    }
+  }, [tallies])
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current)
+      }
+    }
+  }, [])
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 animate-pulse" />
+          <p className="text-muted-foreground">Loading your tallies...</p>
+        </div>
+      </div>
+    )
+  }
 
   const startLongPress = (id: string) => {
     isLongPressRef.current = false
@@ -815,14 +841,6 @@ function TallyApp({ user }: { user: UserInfo }) {
     setIsEditingName(false)
     setEditingTitle('')
   }
-
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current)
-      }
-    }
-  }, [])
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
