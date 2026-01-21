@@ -724,11 +724,10 @@ function TallyApp({ user }: { user: UserInfo }) {
   useEffect(() => {
     if (tallies !== undefined) {
       setIsLoaded(true)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setShowNewButton(true)
-        })
-      })
+      const timer = setTimeout(() => {
+        setShowNewButton(true)
+      }, 1000)
+      return () => clearTimeout(timer)
     }
   }, [tallies])
 
