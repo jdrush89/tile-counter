@@ -3,10 +3,11 @@ import { useKV } from '@github/spark/hooks'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast, Toaster } from 'sonner'
 
 interface Tally {
   id: string
@@ -58,7 +59,11 @@ const UNLOCKABLE_ANIMALS = [
   { id: 8, name: 'Dragon', unlockAt: 100 },
 ]
 
-const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS]
+const PREMIUM_ANIMALS = [
+  { id: 9, name: 'Griffin', price: 2.99 },
+]
+
+const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
 
 function RunningDog({ legPhase }: { legPhase: number }) {
   const frontLegAngle = Math.sin(legPhase) * 35
@@ -357,6 +362,55 @@ function RunningDragon({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningGriffin({ legPhase }: { legPhase: number }) {
+  const wingFlap = Math.sin(legPhase * 1.5) * 35
+  const frontLegAngle = Math.sin(legPhase) * 30
+  const backLegAngle = Math.sin(legPhase + Math.PI) * 30
+  const tailSwish = Math.sin(legPhase) * 12
+  const headBob = Math.sin(legPhase * 2) * 2
+  
+  return (
+    <svg viewBox="0 0 55 40" className="w-full h-full">
+      <ellipse cx="24" cy="22" rx="13" ry="9" fill="white" fillOpacity="0.9" />
+      <g transform={`rotate(${-wingFlap}, 22, 18)`}>
+        <path d="M22 18 Q14 6 6 4 Q10 10 8 14 Q12 12 14 16 Q18 12 22 18" fill="white" fillOpacity="0.85" />
+        <path d="M8 14 Q4 10 2 12" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+        <path d="M14 16 Q10 14 8 16" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+      </g>
+      <g transform={`rotate(${wingFlap}, 26, 18)`}>
+        <path d="M26 18 Q34 6 42 4 Q38 10 40 14 Q36 12 34 16 Q30 12 26 18" fill="white" fillOpacity="0.75" />
+      </g>
+      <g transform={`translate(0, ${headBob})`}>
+        <ellipse cx="40" cy="16" rx="6" ry="5" fill="white" fillOpacity="0.9" />
+        <path d="M38 12 Q36 8 38 10" fill="white" fillOpacity="0.9" />
+        <path d="M42 11 Q44 7 42 9" fill="white" fillOpacity="0.9" />
+        <circle cx="38" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <circle cx="42" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <path d="M44 17 Q48 16 50 17 Q48 18 44 18" fill="white" fillOpacity="0.8" />
+        <path d="M50 17 L52 16 M50 17 L52 18" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+      </g>
+      <g transform={`rotate(${frontLegAngle}, 30, 28)`}>
+        <line x1="30" y1="28" x2="30" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M30 38 L28 39 M30 38 L32 39 M30 38 L30 40" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+      </g>
+      <g transform={`rotate(${frontLegAngle - 15}, 34, 28)`}>
+        <line x1="34" y1="28" x2="34" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M34 38 L32 39 M34 38 L36 39 M34 38 L34 40" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+      </g>
+      <g transform={`rotate(${backLegAngle}, 14, 28)`}>
+        <path d="M14 28 Q12 33 14 38" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+        <ellipse cx="14" cy="39" rx="2" ry="1.5" fill="white" fillOpacity="0.9" />
+      </g>
+      <g transform={`rotate(${backLegAngle - 15}, 18, 28)`}>
+        <path d="M18 28 Q16 33 18 38" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+        <ellipse cx="18" cy="39" rx="2" ry="1.5" fill="white" fillOpacity="0.9" />
+      </g>
+      <path d={`M11 22 Q${5 + tailSwish} 20 ${3 + tailSwish} 24 Q${6 + tailSwish} 22 ${4 + tailSwish} 28`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+      <ellipse cx={4 + tailSwish} cy="29" rx="2" ry="3" fill="white" fillOpacity="0.8" />
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -377,6 +431,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <RunningPanther legPhase={legPhase} />
     case 8:
       return <RunningDragon legPhase={legPhase} />
+    case 9:
+      return <RunningGriffin legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
@@ -697,6 +753,7 @@ function TallyTile({
 
 function TallyApp({ user }: { user: UserInfo }) {
   const [tallies, setTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
+  const [purchasedAnimals, setPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -707,8 +764,11 @@ function TallyApp({ user }: { user: UserInfo }) {
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false)
+  const [animalToPurchase, setAnimalToPurchase] = useState<{ id: number; name: string; price: number } | null>(null)
 
   const currentTallies = tallies ?? []
+  const currentPurchased = purchasedAnimals ?? []
   const [showNewButton, setShowNewButton] = useState(false)
   
   const totalTallies = useMemo(() => 
@@ -716,10 +776,12 @@ function TallyApp({ user }: { user: UserInfo }) {
     [currentTallies]
   )
   
-  const unlockedAnimals = useMemo(() => 
-    ALL_ANIMALS.filter(a => a.unlockAt <= totalTallies),
-    [totalTallies]
-  )
+  const isAnimalAvailable = (animal: typeof ALL_ANIMALS[number]) => {
+    if ('price' in animal) {
+      return currentPurchased.includes(animal.id)
+    }
+    return animal.unlockAt <= totalTallies
+  }
   
   const nextUnlock = useMemo(() => 
     UNLOCKABLE_ANIMALS.find(a => a.unlockAt > totalTallies),
@@ -838,6 +900,30 @@ function TallyApp({ user }: { user: UserInfo }) {
     setTallies((current) =>
       (current ?? []).map((t) => (t.id === id ? { ...t, animalType } : t))
     )
+  }
+
+  const handleAnimalSelect = (tallyId: string, animalId: number) => {
+    const animal = ALL_ANIMALS.find(a => a.id === animalId)
+    if (!animal) return
+    
+    if ('price' in animal && !currentPurchased.includes(animalId)) {
+      setAnimalToPurchase(animal as { id: number; name: string; price: number })
+      setPurchaseDialogOpen(true)
+      return
+    }
+    
+    updateTallyAnimal(tallyId, animalId)
+  }
+
+  const handlePurchase = () => {
+    if (!animalToPurchase) return
+    
+    setPurchasedAnimals((current) => [...(current ?? []), animalToPurchase.id])
+    toast.success(`${animalToPurchase.name} purchased!`, {
+      description: 'You can now use this animal on any tally tile.',
+    })
+    setPurchaseDialogOpen(false)
+    setAnimalToPurchase(null)
   }
 
   const deleteTally = (id: string) => {
@@ -972,24 +1058,34 @@ function TallyApp({ user }: { user: UserInfo }) {
                           <div className="flex justify-center">
                             <Select
                               value={String(tally.animalType ?? 0)}
-                              onValueChange={(value) => updateTallyAnimal(tally.id, Number(value))}
+                              onValueChange={(value) => handleAnimalSelect(tally.id, Number(value))}
                             >
                               <SelectTrigger className="w-full max-w-[140px] md:max-w-[160px] h-7 md:h-8 text-xs">
                                 <SelectValue placeholder="Select animal" />
                               </SelectTrigger>
                               <SelectContent>
                                 {ALL_ANIMALS.map((animal) => {
-                                  const isUnlocked = animal.unlockAt <= totalTallies
+                                  const isPremium = 'price' in animal
+                                  const isUnlocked = isPremium 
+                                    ? currentPurchased.includes(animal.id)
+                                    : animal.unlockAt <= totalTallies
                                   return (
                                     <SelectItem
                                       key={animal.id}
                                       value={String(animal.id)}
-                                      disabled={!isUnlocked}
                                       className="text-xs"
                                     >
                                       <span className="flex items-center gap-2">
                                         {isUnlocked ? (
-                                          <span>{animal.name}</span>
+                                          <span className="flex items-center gap-1.5">
+                                            {isPremium && <Crown size={12} className="text-amber-500" weight="fill" />}
+                                            {animal.name}
+                                          </span>
+                                        ) : isPremium ? (
+                                          <span className="flex items-center gap-1.5 text-amber-600">
+                                            <CurrencyDollar size={12} weight="bold" />
+                                            {animal.name} (${(animal as { price: number }).price})
+                                          </span>
                                         ) : (
                                           <span className="flex items-center gap-1.5 text-muted-foreground">
                                             <Lock size={12} />
@@ -1127,6 +1223,56 @@ function TallyApp({ user }: { user: UserInfo }) {
           Right-click or long-press a tile to edit or delete
         </footer>
       </div>
+
+      <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown size={20} className="text-amber-500" weight="fill" />
+              Premium Animal
+            </DialogTitle>
+            <DialogDescription>
+              Unlock this exclusive animal to use on your tallies.
+            </DialogDescription>
+          </DialogHeader>
+          {animalToPurchase && (
+            <div className="space-y-6 pt-4">
+              <div className="flex items-center justify-center">
+                <div 
+                  className="w-24 h-24 rounded-2xl flex items-center justify-center"
+                  style={{ backgroundColor: 'oklch(0.65 0.2 280)' }}
+                >
+                  <div className="w-20 h-20">
+                    <RunningAnimal variant={animalToPurchase.id} legPhase={0} />
+                  </div>
+                </div>
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="text-xl font-semibold">{animalToPurchase.name}</h3>
+                <p className="text-2xl font-bold text-primary">${animalToPurchase.price.toFixed(2)}</p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPurchaseDialogOpen(false)
+                    setAnimalToPurchase(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handlePurchase}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                >
+                  <CurrencyDollar size={16} weight="bold" className="mr-1" />
+                  Purchase
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -1145,7 +1291,12 @@ function App() {
     )
   }
 
-  return <TallyApp user={user} />
+  return (
+    <>
+      <TallyApp user={user} />
+      <Toaster position="top-center" />
+    </>
+  )
 }
 
 export default App
