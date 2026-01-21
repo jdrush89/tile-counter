@@ -372,6 +372,7 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
   return (
     <svg viewBox="0 0 55 40" className="w-full h-full">
       <ellipse cx="24" cy="22" rx="13" ry="9" fill="white" fillOpacity="0.9" />
+      <path d="M34 18 Q38 16 36 20" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
       <g transform={`rotate(${-wingFlap}, 22, 18)`}>
         <path d="M22 18 Q14 6 6 4 Q10 10 8 14 Q12 12 14 16 Q18 12 22 18" fill="white" fillOpacity="0.85" />
         <path d="M8 14 Q4 10 2 12" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
@@ -381,13 +382,13 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
         <path d="M26 18 Q34 6 42 4 Q38 10 40 14 Q36 12 34 16 Q30 12 26 18" fill="white" fillOpacity="0.75" />
       </g>
       <g transform={`translate(0, ${headBob})`}>
-        <ellipse cx="42" cy="14" rx="5" ry="4.5" fill="white" fillOpacity="0.9" />
-        <path d="M46 14 L52 13 L46 16 Z" fill="white" fillOpacity="0.95" />
-        <path d="M46 14.5 L50 14" stroke="white" strokeWidth="0.5" opacity="0.5" />
-        <circle cx="44" cy="13" r="1" fill="currentColor" fillOpacity="0.5" />
-        <path d="M39 10 Q37 6 40 9" fill="white" fillOpacity="0.9" />
-        <path d="M43 9 Q42 5 45 8" fill="white" fillOpacity="0.9" />
-        <ellipse cx="40" cy="12" rx="1.5" ry="2" fill="white" fillOpacity="0.6" />
+        <ellipse cx="38" cy="16" rx="5" ry="4.5" fill="white" fillOpacity="0.9" />
+        <path d="M42 16 L48 15 L42 18 Z" fill="white" fillOpacity="0.95" />
+        <path d="M42 16.5 L46 16" stroke="white" strokeWidth="0.5" opacity="0.5" />
+        <circle cx="40" cy="15" r="1" fill="currentColor" fillOpacity="0.5" />
+        <path d="M35 12 Q33 8 36 11" fill="white" fillOpacity="0.9" />
+        <path d="M39 11 Q38 7 41 10" fill="white" fillOpacity="0.9" />
+        <ellipse cx="36" cy="14" rx="1.5" ry="2" fill="white" fillOpacity="0.6" />
       </g>
       <g transform={`rotate(${frontLegAngle}, 30, 28)`}>
         <line x1="30" y1="28" x2="30" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
