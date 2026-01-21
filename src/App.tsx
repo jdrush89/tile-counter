@@ -4,8 +4,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Plus, Trash, Minus, Check, PencilSimple, Dog, Cat, Bird, Rabbit, Lock } from '@phosphor-icons/react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Tally {
@@ -862,8 +862,8 @@ function App() {
               >
                 {editingId === tally.id ? (
                   <Card className="aspect-square border-2 border-primary/50 bg-card overflow-hidden">
-                    <CardContent className="h-full flex flex-col items-center justify-between p-3">
-                      <div className="flex flex-col items-center gap-1 w-full">
+                    <CardContent className="h-full flex flex-col items-center justify-between p-4 gap-3">
+                      <div className="flex flex-col items-center gap-2 w-full">
                         <span className="text-2xl md:text-3xl font-bold text-foreground">
                           {tally.count}
                         </span>
@@ -902,7 +902,7 @@ function App() {
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-2 w-full">
+                      <div className="flex flex-col gap-3 w-full">
                         <div className="flex justify-center gap-1.5">
                           {COLORS.map((color) => (
                             <button
@@ -914,51 +914,43 @@ function App() {
                           ))}
                         </div>
 
-                        <div className="flex justify-center gap-1 flex-wrap">
-                          <TooltipProvider delayDuration={200}>
-                            {ALL_ANIMALS.map((animal) => {
-                              const isUnlocked = animal.unlockAt <= totalTallies
-                              const isSelected = (tally.animalType ?? 0) === animal.id
-                              const AnimalIcon = animal.id === 0 ? Dog : animal.id === 1 ? Cat : animal.id === 2 ? Rabbit : Bird
-                              return (
-                                <Tooltip key={animal.id}>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => isUnlocked && updateTallyAnimal(tally.id, animal.id)}
-                                      disabled={!isUnlocked}
-                                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all relative ${
-                                        isSelected && isUnlocked
-                                          ? 'bg-primary text-primary-foreground scale-110' 
-                                          : isUnlocked 
-                                            ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                                            : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
-                                      }`}
-                                    >
+                        <div className="flex justify-center">
+                          <Select
+                            value={String(tally.animalType ?? 0)}
+                            onValueChange={(value) => updateTallyAnimal(tally.id, Number(value))}
+                          >
+                            <SelectTrigger className="w-full max-w-[160px] h-8 text-xs">
+                              <SelectValue placeholder="Select animal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ALL_ANIMALS.map((animal) => {
+                                const isUnlocked = animal.unlockAt <= totalTallies
+                                return (
+                                  <SelectItem
+                                    key={animal.id}
+                                    value={String(animal.id)}
+                                    disabled={!isUnlocked}
+                                    className="text-xs"
+                                  >
+                                    <span className="flex items-center gap-2">
                                       {isUnlocked ? (
-                                        animal.id < 4 ? (
-                                          <AnimalIcon size={16} weight={isSelected ? 'fill' : 'regular'} />
-                                        ) : (
-                                          <span className="text-xs font-bold">{animal.name[0]}</span>
-                                        )
+                                        <span>{animal.name}</span>
                                       ) : (
-                                        <Lock size={12} weight="bold" />
+                                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                                          <Lock size={12} />
+                                          {animal.name} ({animal.unlockAt})
+                                        </span>
                                       )}
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="text-xs">
-                                    {isUnlocked 
-                                      ? animal.name 
-                                      : `${animal.name} - Unlock at ${animal.unlockAt} total tallies`
-                                    }
-                                  </TooltipContent>
-                                </Tooltip>
-                              )
-                            })}
-                          </TooltipProvider>
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       
-                      <div className="flex flex-col items-center gap-1.5 w-full">
+                      <div className="flex flex-col items-center gap-2 w-full">
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
