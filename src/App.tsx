@@ -1,315 +1,234 @@
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useKV } from '@github/spark/hooks'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
-import { Separator } from '@/components/ui/separator'
-import { GridFour, Ruler, Percent, Package, Square } from '@phosphor-icons/react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Plus, Trash, Minus } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+interface Tally {
+  id: string
+  title: string
+  count: number
+  color: string
+}
+
+const COLORS = [
+  'oklch(0.65 0.2 250)',
+  'oklch(0.65 0.2 150)',
+  'oklch(0.65 0.2 30)',
+  'oklch(0.65 0.2 330)',
+  'oklch(0.65 0.2 200)',
+  'oklch(0.65 0.2 80)',
+]
+
 function App() {
-  const [roomWidth, setRoomWidth] = useState<string>('')
-  const [roomLength, setRoomLength] = useState<string>('')
-  const [tileWidth, setTileWidth] = useState<string>('12')
-  const [tileHeight, setTileHeight] = useState<string>('12')
-  const [wastePercent, setWastePercent] = useState<number>(10)
-  const [tilesPerBox, setTilesPerBox] = useState<string>('10')
+  const [tallies, setTallies] = useKV<Tally[]>('user-tallies', [])
+  const [newTitle, setNewTitle] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
-  const roomWidthNum = parseFloat(roomWidth) || 0
-  const roomLengthNum = parseFloat(roomLength) || 0
-  const tileWidthNum = parseFloat(tileWidth) || 0
-  const tileHeightNum = parseFloat(tileHeight) || 0
-  const tilesPerBoxNum = parseInt(tilesPerBox) || 1
+  const currentTallies = tallies ?? []
 
-  const roomAreaSqFt = (roomWidthNum * roomLengthNum)
-  const tileAreaSqIn = tileWidthNum * tileHeightNum
-  const tileAreaSqFt = tileAreaSqIn / 144
+  const addTally = () => {
+    if (!newTitle.trim()) return
+    const color = COLORS[currentTallies.length % COLORS.length]
+    setTallies((current) => [
+      ...(current ?? []),
+      { id: Date.now().toString(), title: newTitle.trim(), count: 0, color }
+    ])
+    setNewTitle('')
+    setDialogOpen(false)
+  }
 
-  const baseTilesNeeded = tileAreaSqFt > 0 ? roomAreaSqFt / tileAreaSqFt : 0
-  const tilesWithWaste = Math.ceil(baseTilesNeeded * (1 + wastePercent / 100))
-  const boxesNeeded = Math.ceil(tilesWithWaste / tilesPerBoxNum)
+  const incrementTally = (id: string) => {
+    setTallies((current) =>
+      (current ?? []).map((t) => (t.id === id ? { ...t, count: t.count + 1 } : t))
+    )
+  }
 
-  const isValid = roomWidthNum > 0 && roomLengthNum > 0 && tileWidthNum > 0 && tileHeightNum > 0
+  const decrementTally = (id: string) => {
+    setTallies((current) =>
+      (current ?? []).map((t) => (t.id === id ? { ...t, count: Math.max(0, t.count - 1) } : t))
+    )
+  }
 
-  const handleNumericInput = (value: string, setter: (val: string) => void) => {
-    const cleaned = value.replace(/[^0-9.]/g, '')
-    const parts = cleaned.split('.')
-    if (parts.length > 2) return
-    setter(cleaned)
+  const deleteTally = (id: string) => {
+    setTallies((current) => (current ?? []).filter((t) => t.id !== id))
+    setEditingId(null)
   }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div 
-        className="fixed inset-0 opacity-[0.03] pointer-events-none"
+        className="fixed inset-0 opacity-[0.04] pointer-events-none"
         style={{
-          backgroundImage: `
-            linear-gradient(to right, oklch(0.55 0.15 250) 1px, transparent 1px),
-            linear-gradient(to bottom, oklch(0.55 0.15 250) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px'
+          backgroundImage: `radial-gradient(circle at 1px 1px, oklch(0.5 0.1 250) 1px, transparent 0)`,
+          backgroundSize: '24px 24px'
         }}
       />
       
-      <div className="relative max-w-2xl mx-auto space-y-6">
-        <header className="text-center space-y-2 py-4">
-          <div className="inline-flex items-center gap-3">
-            <div className="p-2 bg-primary rounded-lg">
-              <GridFour size={28} weight="bold" className="text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-              Tile Counter
-            </h1>
-          </div>
+      <div className="relative max-w-4xl mx-auto space-y-6">
+        <header className="text-center space-y-2 py-6">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+            Tally
+          </h1>
           <p className="text-muted-foreground">
-            Calculate exactly how many tiles you need for your project
+            Tap to count. Long press to edit.
           </p>
         </header>
 
-        <Card className="shadow-lg border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Ruler size={20} weight="bold" className="text-primary" />
-              Room Dimensions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="room-width" className="text-sm font-medium">
-                  Width
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="room-width"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={roomWidth}
-                    onChange={(e) => handleNumericInput(e.target.value, setRoomWidth)}
-                    className="pr-10 text-lg font-medium"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    ft
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="room-length" className="text-sm font-medium">
-                  Length
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="room-length"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={roomLength}
-                    onChange={(e) => handleNumericInput(e.target.value, setRoomLength)}
-                    className="pr-10 text-lg font-medium"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    ft
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-secondary/50 rounded-lg px-4 py-3 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total Area</span>
-              <span className="font-semibold text-foreground">
-                {roomAreaSqFt.toLocaleString(undefined, { maximumFractionDigits: 2 })} sq ft
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Square size={20} weight="bold" className="text-primary" />
-              Tile Size
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tile-width" className="text-sm font-medium">
-                  Width
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="tile-width"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="12"
-                    value={tileWidth}
-                    onChange={(e) => handleNumericInput(e.target.value, setTileWidth)}
-                    className="pr-10 text-lg font-medium"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    in
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tile-height" className="text-sm font-medium">
-                  Height
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="tile-height"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="12"
-                    value={tileHeight}
-                    onChange={(e) => handleNumericInput(e.target.value, setTileHeight)}
-                    className="pr-10 text-lg font-medium"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    in
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-secondary/50 rounded-lg px-4 py-3 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Tile Area</span>
-              <span className="font-semibold text-foreground">
-                {tileAreaSqIn.toLocaleString()} sq in ({tileAreaSqFt.toFixed(3)} sq ft)
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Percent size={20} weight="bold" className="text-primary" />
-              Extra for Waste
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Account for cuts, breakage & mistakes
-                </span>
-                <span className="text-lg font-bold text-primary">{wastePercent}%</span>
-              </div>
-              <Slider
-                id="waste-slider"
-                value={[wastePercent]}
-                onValueChange={([val]) => setWastePercent(val)}
-                min={5}
-                max={25}
-                step={1}
-                className="py-2"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>5% (Simple layout)</span>
-                <span>25% (Complex cuts)</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Package size={20} weight="bold" className="text-primary" />
-              Packaging
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="tiles-per-box" className="text-sm font-medium">
-                Tiles per Box
-              </Label>
-              <div className="relative max-w-[200px]">
-                <Input
-                  id="tiles-per-box"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="10"
-                  value={tilesPerBox}
-                  onChange={(e) => handleNumericInput(e.target.value, setTilesPerBox)}
-                  className="pr-14 text-lg font-medium"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                  tiles
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Separator className="my-6" />
-
-        <motion.div
-          layout
-          className="sticky bottom-4"
-        >
-          <Card className="shadow-xl border-2 border-accent/30 bg-gradient-to-br from-card to-secondary/30">
-            <CardContent className="p-6">
-              <AnimatePresence mode="wait">
-                {isValid ? (
-                  <motion.div
-                    key="results"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
-                  >
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Total Tiles Needed</p>
-                      <motion.p
-                        key={tilesWithWaste}
-                        initial={{ scale: 1.1, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="text-5xl md:text-6xl font-bold text-primary tracking-tight"
-                      >
-                        {tilesWithWaste.toLocaleString()}
-                      </motion.p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        ({baseTilesNeeded.toFixed(0)} base + {Math.ceil(baseTilesNeeded * wastePercent / 100)} extra)
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <AnimatePresence mode="popLayout">
+            {currentTallies.map((tally) => (
+              <motion.div
+                key={tally.id}
+                layout
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              >
+                {editingId === tally.id ? (
+                  <Card className="aspect-square border-2 border-dashed border-destructive/50 bg-card">
+                    <CardContent className="h-full flex flex-col items-center justify-center gap-3 p-4">
+                      <p className="text-sm font-medium text-muted-foreground truncate w-full text-center">
+                        {tally.title}
                       </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="bg-secondary/60 rounded-lg p-4 text-center">
-                        <p className="text-2xl md:text-3xl font-bold text-foreground">
-                          {boxesNeeded.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Boxes to Buy</p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => decrementTally(tally.id)}
+                          className="h-10 w-10"
+                        >
+                          <Minus size={18} weight="bold" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => deleteTally(tally.id)}
+                          className="h-10 w-10"
+                        >
+                          <Trash size={18} weight="bold" />
+                        </Button>
                       </div>
-                      <div className="bg-secondary/60 rounded-lg p-4 text-center">
-                        <p className="text-2xl md:text-3xl font-bold text-foreground">
-                          {(boxesNeeded * tilesPerBoxNum - tilesWithWaste).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Extra Tiles</p>
-                      </div>
-                    </div>
-                  </motion.div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingId(null)}
+                        className="text-xs"
+                      >
+                        Done
+                      </Button>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  <motion.div
-                    key="placeholder"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-6"
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => incrementTally(tally.id)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      setEditingId(tally.id)
+                    }}
+                    onTouchStart={() => {
+                      const timeout = setTimeout(() => setEditingId(tally.id), 500)
+                      const clear = () => clearTimeout(timeout)
+                      document.addEventListener('touchend', clear, { once: true })
+                      document.addEventListener('touchmove', clear, { once: true })
+                    }}
+                    className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
                   >
-                    <GridFour size={48} weight="light" className="mx-auto text-muted-foreground/50 mb-3" />
-                    <p className="text-muted-foreground">
-                      Enter room and tile dimensions to calculate
-                    </p>
-                  </motion.div>
+                    <Card 
+                      className="aspect-square cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-0 overflow-hidden"
+                      style={{ backgroundColor: tally.color }}
+                    >
+                      <CardContent className="h-full flex flex-col items-center justify-center p-4">
+                        <motion.span
+                          key={tally.count}
+                          initial={{ scale: 1.3, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="text-5xl md:text-6xl font-bold text-white drop-shadow-sm"
+                        >
+                          {tally.count}
+                        </motion.span>
+                        <span className="text-sm md:text-base font-medium text-white/90 mt-2 truncate w-full text-center">
+                          {tally.title}
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </motion.button>
                 )}
-              </AnimatePresence>
-            </CardContent>
-          </Card>
-        </motion.div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-        <footer className="text-center text-xs text-muted-foreground pb-8 pt-4">
-          Tip: Always buy a few extra tiles for future repairs
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+              >
+                <Card className="aspect-square border-2 border-dashed border-muted-foreground/30 bg-transparent hover:bg-secondary/50 hover:border-primary/50 transition-all cursor-pointer">
+                  <CardContent className="h-full flex flex-col items-center justify-center gap-2 p-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Plus size={28} weight="bold" className="text-primary" />
+                    </div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      New Tally
+                    </span>
+                  </CardContent>
+                </Card>
+              </motion.button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create New Tally</DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  addTally()
+                }}
+                className="space-y-4 pt-4"
+              >
+                <Input
+                  id="tally-title"
+                  placeholder="e.g. Movies watched, Coffees, Pushups..."
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="text-lg"
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={!newTitle.trim()}>
+                    Create
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {currentTallies.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              Create your first tally to start counting!
+            </p>
+          </div>
+        )}
+
+        <footer className="text-center text-xs text-muted-foreground pb-8 pt-8">
+          Right-click or long-press a tile to edit or delete
         </footer>
       </div>
     </div>
