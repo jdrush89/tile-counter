@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash, Minus, Check, PencilSimple, Dog, Cat, Bird, Rabbit } from '@phosphor-icons/react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Plus, Trash, Minus, Check, PencilSimple, Dog, Cat, Bird, Rabbit, Lock } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Tally {
@@ -24,12 +25,22 @@ const COLORS = [
   'oklch(0.65 0.2 80)',
 ]
 
-const ANIMALS = [
-  { id: 0, name: 'Dog' },
-  { id: 1, name: 'Cat' },
-  { id: 2, name: 'Bunny' },
-  { id: 3, name: 'Bird' },
+const BASE_ANIMALS = [
+  { id: 0, name: 'Dog', unlockAt: 0 },
+  { id: 1, name: 'Cat', unlockAt: 0 },
+  { id: 2, name: 'Bunny', unlockAt: 0 },
+  { id: 3, name: 'Bird', unlockAt: 0 },
 ]
+
+const UNLOCKABLE_ANIMALS = [
+  { id: 4, name: 'Snake', unlockAt: 20 },
+  { id: 5, name: 'Ostrich', unlockAt: 40 },
+  { id: 6, name: 'Gorilla', unlockAt: 60 },
+  { id: 7, name: 'Panther', unlockAt: 80 },
+  { id: 8, name: 'Dragon', unlockAt: 100 },
+]
+
+const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS]
 
 function RunningDog({ legPhase }: { legPhase: number }) {
   const frontLegAngle = Math.sin(legPhase) * 35
@@ -166,8 +177,170 @@ function RunningBird({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningSnake({ legPhase }: { legPhase: number }) {
+  const wave1 = Math.sin(legPhase) * 3
+  const wave2 = Math.sin(legPhase + 1) * 3
+  const wave3 = Math.sin(legPhase + 2) * 3
+  const tongueFlick = Math.sin(legPhase * 3) * 2
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <path
+        d={`M8 ${22 + wave1} Q16 ${18 + wave2} 24 ${22 + wave3} Q32 ${26 + wave1} 40 ${22 + wave2}`}
+        stroke="white"
+        strokeWidth="6"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.9"
+      />
+      <circle cx="42" cy={21 + wave2} r="4" fill="white" fillOpacity="0.9" />
+      <circle cx="40" cy={20 + wave2} r="1" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="44" cy={20 + wave2} r="1" fill="currentColor" fillOpacity="0.4" />
+      <path
+        d={`M46 ${22 + wave2} L${48 + tongueFlick} ${21 + wave2} M${47 + tongueFlick} ${21 + wave2} L${49 + tongueFlick} ${20 + wave2} M${47 + tongueFlick} ${21 + wave2} L${49 + tongueFlick} ${23 + wave2}`}
+        stroke="white"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.8"
+      />
+      <ellipse cx="6" cy={22 + wave1} rx="2" ry="1.5" fill="white" fillOpacity="0.8" />
+    </svg>
+  )
+}
+
+function RunningOstrich({ legPhase }: { legPhase: number }) {
+  const frontLegAngle = Math.sin(legPhase) * 40
+  const backLegAngle = Math.sin(legPhase + Math.PI) * 40
+  const neckBob = Math.sin(legPhase * 2) * 2
+  const wingFlutter = Math.sin(legPhase * 3) * 8
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <ellipse cx="20" cy="24" rx="10" ry="7" fill="white" fillOpacity="0.9" />
+      <g transform={`rotate(${wingFlutter}, 20, 22)`}>
+        <ellipse cx="18" cy="20" rx="6" ry="3" fill="white" fillOpacity="0.7" />
+      </g>
+      <path d={`M28 22 Q34 ${14 + neckBob} 38 ${10 + neckBob}`} stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
+      <circle cx="40" cy={8 + neckBob} r="4" fill="white" fillOpacity="0.9" />
+      <circle cx="42" cy={7 + neckBob} r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <path d={`M44 ${9 + neckBob} L48 ${10 + neckBob}`} stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
+      <g transform={`rotate(${frontLegAngle}, 24, 30)`}>
+        <line x1="24" y1="30" x2="24" y2="40" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${backLegAngle}, 16, 30)`}>
+        <line x1="16" y1="30" x2="16" y2="40" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </g>
+    </svg>
+  )
+}
+
+function RunningGorilla({ legPhase }: { legPhase: number }) {
+  const armSwing = Math.sin(legPhase) * 20
+  const legSwing = Math.sin(legPhase + Math.PI) * 15
+  const bodyBob = Math.abs(Math.sin(legPhase)) * 2
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${-bodyBob})`}>
+        <ellipse cx="25" cy="20" rx="10" ry="8" fill="white" fillOpacity="0.9" />
+        <circle cx="32" cy="14" r="6" fill="white" fillOpacity="0.9" />
+        <ellipse cx="28" cy="12" rx="2" ry="2.5" fill="white" fillOpacity="0.7" />
+        <ellipse cx="36" cy="12" rx="2" ry="2.5" fill="white" fillOpacity="0.7" />
+        <circle cx="30" cy="14" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <circle cx="34" cy="14" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <ellipse cx="32" cy="17" rx="2.5" ry="1.5" fill="white" fillOpacity="0.6" />
+        <g transform={`rotate(${armSwing}, 30, 22)`}>
+          <path d="M30 22 Q36 28 38 36" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
+          <circle cx="38" cy="37" r="2.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-armSwing}, 20, 22)`}>
+          <path d="M20 22 Q14 28 12 36" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
+          <circle cx="12" cy="37" r="2.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${legSwing}, 22, 28)`}>
+          <line x1="22" y1="28" x2="20" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 28, 28)`}>
+          <line x1="28" y1="28" x2="30" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
+function RunningPanther({ legPhase }: { legPhase: number }) {
+  const frontLegAngle = Math.sin(legPhase) * 35
+  const backLegAngle = Math.sin(legPhase + Math.PI) * 35
+  const tailCurve = Math.sin(legPhase) * 10
+  const bodyStretch = Math.sin(legPhase * 2) * 2
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <ellipse cx={25 + bodyStretch} cy="20" rx="14" ry="7" fill="white" fillOpacity="0.9" />
+      <circle cx="40" cy="16" r="5" fill="white" fillOpacity="0.9" />
+      <path d="M37 13 L35 8 L38 12" fill="white" fillOpacity="0.9" />
+      <path d="M42 12 L44 7 L41 11" fill="white" fillOpacity="0.9" />
+      <circle cx="38" cy="15" r="1" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="42" cy="15" r="1" fill="currentColor" fillOpacity="0.4" />
+      <ellipse cx="40" cy="18" rx="1.5" ry="0.8" fill="white" fillOpacity="0.6" />
+      <g transform={`rotate(${frontLegAngle}, 32, 24)`}>
+        <line x1="32" y1="24" x2="32" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${frontLegAngle - 20}, 36, 24)`}>
+        <line x1="36" y1="24" x2="36" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${backLegAngle}, 16, 24)`}>
+        <line x1="16" y1="24" x2="16" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${backLegAngle - 20}, 20, 24)`}>
+        <line x1="20" y1="24" x2="20" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <path d={`M11 18 Q${4 + tailCurve} 10 ${2 + tailCurve} 6`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+    </svg>
+  )
+}
+
+function RunningDragon({ legPhase }: { legPhase: number }) {
+  const wingFlap = Math.sin(legPhase * 1.5) * 30
+  const legSwing = Math.sin(legPhase) * 25
+  const tailWave = Math.sin(legPhase + 1) * 8
+  const fireFlicker = Math.sin(legPhase * 4) * 2
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <ellipse cx="24" cy="24" rx="12" ry="8" fill="white" fillOpacity="0.9" />
+      <g transform={`rotate(${-wingFlap}, 24, 20)`}>
+        <path d="M24 20 Q18 8 10 6 Q16 12 14 18 Q20 14 24 20" fill="white" fillOpacity="0.8" />
+      </g>
+      <g transform={`rotate(${wingFlap}, 24, 20)`}>
+        <path d="M24 20 Q30 8 38 6 Q32 12 34 18 Q28 14 24 20" fill="white" fillOpacity="0.7" />
+      </g>
+      <circle cx="38" cy="20" r="5" fill="white" fillOpacity="0.9" />
+      <path d="M36 16 L34 12 L37 15" fill="white" fillOpacity="0.9" />
+      <path d="M40 15 L42 11 L40 15" fill="white" fillOpacity="0.9" />
+      <circle cx="36" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="40" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <ellipse cx="38" cy="22" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
+      <path
+        d={`M43 21 L${46 + fireFlicker} 20 L${48 + fireFlicker} 21 L${46 + fireFlicker} 22 L43 21`}
+        fill="white"
+        fillOpacity="0.7"
+      />
+      <path d={`M12 24 Q${6 + tailWave} 22 ${4 + tailWave} 18`} stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9" />
+      <path d={`M${4 + tailWave} 18 L${2 + tailWave} 15 M${4 + tailWave} 18 L${6 + tailWave} 15 M${4 + tailWave} 18 L${4 + tailWave} 14`} stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+      <g transform={`rotate(${legSwing}, 28, 30)`}>
+        <line x1="28" y1="30" x2="28" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      <g transform={`rotate(${-legSwing}, 20, 30)`}>
+        <line x1="20" y1="30" x2="20" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
-  switch (variant % 4) {
+  switch (variant) {
     case 0:
       return <RunningDog legPhase={legPhase} />
     case 1:
@@ -175,8 +348,19 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
     case 2:
       return <RunningBunny legPhase={legPhase} />
     case 3:
-    default:
       return <RunningBird legPhase={legPhase} />
+    case 4:
+      return <RunningSnake legPhase={legPhase} />
+    case 5:
+      return <RunningOstrich legPhase={legPhase} />
+    case 6:
+      return <RunningGorilla legPhase={legPhase} />
+    case 7:
+      return <RunningPanther legPhase={legPhase} />
+    case 8:
+      return <RunningDragon legPhase={legPhase} />
+    default:
+      return <RunningDog legPhase={legPhase} />
   }
 }
 
@@ -501,6 +685,21 @@ function App() {
   const isLongPressRef = useRef(false)
 
   const currentTallies = tallies ?? []
+  
+  const totalTallies = useMemo(() => 
+    currentTallies.reduce((sum, t) => sum + t.count, 0),
+    [currentTallies]
+  )
+  
+  const unlockedAnimals = useMemo(() => 
+    ALL_ANIMALS.filter(a => a.unlockAt <= totalTallies),
+    [totalTallies]
+  )
+  
+  const nextUnlock = useMemo(() => 
+    UNLOCKABLE_ANIMALS.find(a => a.unlockAt > totalTallies),
+    [totalTallies]
+  )
 
   const startLongPress = (id: string) => {
     isLongPressRef.current = false
@@ -625,6 +824,29 @@ function App() {
           <p className="text-muted-foreground">
             Tap to count. Long press to edit.
           </p>
+          {nextUnlock && (
+            <div className="pt-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/70 rounded-full text-sm">
+                <Lock size={14} className="text-muted-foreground" />
+                <span className="text-muted-foreground">
+                  <span className="font-semibold text-foreground">{totalTallies}</span>
+                  <span className="mx-1">/</span>
+                  <span>{nextUnlock.unlockAt}</span>
+                  <span className="ml-1.5">to unlock</span>
+                  <span className="ml-1 font-medium text-foreground">{nextUnlock.name}</span>
+                </span>
+              </div>
+            </div>
+          )}
+          {!nextUnlock && totalTallies >= 100 && (
+            <div className="pt-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/20 rounded-full text-sm">
+                <span className="text-accent-foreground font-medium">
+                  🎉 All animals unlocked! Total: {totalTallies}
+                </span>
+              </div>
+            </div>
+          )}
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -692,20 +914,47 @@ function App() {
                           ))}
                         </div>
 
-                        <div className="flex justify-center gap-1">
-                          {ANIMALS.map((animal) => {
-                            const AnimalIcon = animal.id === 0 ? Dog : animal.id === 1 ? Cat : animal.id === 2 ? Rabbit : Bird
-                            const isSelected = (tally.animalType ?? 0) === animal.id
-                            return (
-                              <button
-                                key={animal.id}
-                                onClick={() => updateTallyAnimal(tally.id, animal.id)}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSelected ? 'bg-primary text-primary-foreground scale-110' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
-                              >
-                                <AnimalIcon size={18} weight={isSelected ? 'fill' : 'regular'} />
-                              </button>
-                            )
-                          })}
+                        <div className="flex justify-center gap-1 flex-wrap">
+                          <TooltipProvider delayDuration={200}>
+                            {ALL_ANIMALS.map((animal) => {
+                              const isUnlocked = animal.unlockAt <= totalTallies
+                              const isSelected = (tally.animalType ?? 0) === animal.id
+                              const AnimalIcon = animal.id === 0 ? Dog : animal.id === 1 ? Cat : animal.id === 2 ? Rabbit : Bird
+                              return (
+                                <Tooltip key={animal.id}>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => isUnlocked && updateTallyAnimal(tally.id, animal.id)}
+                                      disabled={!isUnlocked}
+                                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all relative ${
+                                        isSelected && isUnlocked
+                                          ? 'bg-primary text-primary-foreground scale-110' 
+                                          : isUnlocked 
+                                            ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                            : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+                                      }`}
+                                    >
+                                      {isUnlocked ? (
+                                        animal.id < 4 ? (
+                                          <AnimalIcon size={16} weight={isSelected ? 'fill' : 'regular'} />
+                                        ) : (
+                                          <span className="text-xs font-bold">{animal.name[0]}</span>
+                                        )
+                                      ) : (
+                                        <Lock size={12} weight="bold" />
+                                      )}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    {isUnlocked 
+                                      ? animal.name 
+                                      : `${animal.name} - Unlock at ${animal.unlockAt} total tallies`
+                                    }
+                                  </TooltipContent>
+                                </Tooltip>
+                              )
+                            })}
+                          </TooltipProvider>
                         </div>
                       </div>
                       
