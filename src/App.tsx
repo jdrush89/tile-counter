@@ -213,43 +213,15 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
     startTimeRef.current = null
   }
 
-  const runAway = () => {
-    clearAnimations()
-    setIdleState('running')
-    startTimeRef.current = null
-    
-    const exitDirection = position.x < 50 ? -1 : 1
-    setDirection(-exitDirection)
-    const startX = position.x
-    const targetX = exitDirection === 1 ? 120 : -20
-    
-    const animate = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp
-      const elapsed = timestamp - startTimeRef.current
-      
-      const phase = elapsed * 0.04
-      setLegPhase(phase)
-      
-      const progress = Math.min(elapsed / 400, 1)
-      const eased = progress * progress
-      
-      const newX = startX + (targetX - startX) * eased
-      const bounce = Math.sin(phase * 2) * 2
-      setPosition({ x: newX, y: 65 + bounce })
-      
-      if (elapsed < 400) {
-        animationRef.current = requestAnimationFrame(animate)
-      } else {
-        setIdleState('hidden')
-      }
-    }
-    
-    animationRef.current = requestAnimationFrame(animate)
+  const speedUpRef = useRef(false)
+
+  const speedUp = () => {
+    speedUpRef.current = true
   }
 
   useEffect(() => {
     if (isHovered && idleState === 'walking') {
-      runAway()
+      speedUp()
     } else if (isHovered && idleState === 'peeking') {
       setIdleState('hidden')
     }
@@ -330,26 +302,46 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals }: { isA
           setPosition({ x: startX, y: 65 })
           setIdleState('walking')
           startTimeRef.current = null
+          speedUpRef.current = false
+          
+          let currentSpeed = 1
+          let currentX = startX
+          const targetX = walkDir === 1 ? 110 : -10
+          const totalDistance = Math.abs(targetX - startX)
+          let lastTimestamp: number | null = null
           
           const animateWalk = (timestamp: number) => {
-            if (!startTimeRef.current) startTimeRef.current = timestamp
-            const elapsed = timestamp - startTimeRef.current
+            if (!lastTimestamp) lastTimestamp = timestamp
+            const deltaTime = timestamp - lastTimestamp
+            lastTimestamp = timestamp
             
-            const phase = elapsed * 0.008
+            if (speedUpRef.current && currentSpeed < 8) {
+              currentSpeed = Math.min(currentSpeed + deltaTime * 0.02, 8)
+            }
+            
+            const baseSpeed = totalDistance / 6000
+            const actualSpeed = baseSpeed * currentSpeed * deltaTime
+            
+            if (walkDir === 1) {
+              currentX += actualSpeed
+            } else {
+              currentX -= actualSpeed
+            }
+            
+            const legSpeed = speedUpRef.current ? 0.025 : 0.008
+            const phase = (timestamp * legSpeed)
             setLegPhase(phase)
             
-            const progress = Math.min(elapsed / 6000, 1)
+            const bounce = Math.sin(phase * 2) * (speedUpRef.current ? 2 : 1)
+            setPosition({ x: currentX, y: 65 + bounce })
             
-            const startXPos = walkStartPosRef.current.x
-            const targetX = walkDir === 1 ? 110 : -10
-            const newX = startXPos + (targetX - startXPos) * progress
-            const bounce = Math.sin(phase * 2) * 1
-            setPosition({ x: newX, y: 65 + bounce })
+            const reachedEnd = walkDir === 1 ? currentX >= targetX : currentX <= targetX
             
-            if (elapsed < 6000) {
+            if (!reachedEnd) {
               animationRef.current = requestAnimationFrame(animateWalk)
             } else {
               setIdleState('hidden')
+              speedUpRef.current = false
               scheduleIdleAction()
             }
           }
