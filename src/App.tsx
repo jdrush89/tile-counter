@@ -382,7 +382,7 @@ function TileAnimal({ isAnimating, isHovered }: { isAnimating: boolean; isHovere
         animate={{ opacity: 0.9, x: 0 }}
         exit={{ opacity: 0, x: peekSide === 'left' ? -10 : 10 }}
         transition={{ duration: 0.3 }}
-        className="pointer-events-none"
+        className="absolute inset-0 pointer-events-none overflow-visible"
       >
         <PeekingAnimal variant={animalVariant} side={peekSide} />
       </motion.div>
