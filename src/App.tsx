@@ -690,10 +690,8 @@ function TallyTile({
   )
 }
 
-function App() {
-  const user = useCurrentUser()
-  const storageKey = user ? `tallies-${user.id}` : null
-  const [tallies, setTallies] = useKV<Tally[]>(storageKey ?? 'tallies-loading', [])
+function TallyApp({ user }: { user: UserInfo }) {
+  const [tallies, setTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -704,7 +702,7 @@ function App() {
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
 
-  const currentTallies = storageKey ? (tallies ?? []) : []
+  const currentTallies = tallies ?? []
   
   const totalTallies = useMemo(() => 
     currentTallies.reduce((sum, t) => sum + t.count, 0),
@@ -825,17 +823,6 @@ function App() {
       }
     }
   }, [])
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 animate-pulse" />
-          <p className="text-muted-foreground">Loading your tallies...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -1107,6 +1094,23 @@ function App() {
       </div>
     </div>
   )
+}
+
+function App() {
+  const user = useCurrentUser()
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 animate-pulse" />
+          <p className="text-muted-foreground">Loading your tallies...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return <TallyApp user={user} />
 }
 
 export default App
