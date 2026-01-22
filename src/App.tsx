@@ -1072,8 +1072,14 @@ function TallyApp({ user }: { user: UserInfo }) {
       
       <div className="relative max-w-4xl mx-auto space-y-6">
         <header className="text-center space-y-2 py-6">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground flex items-center justify-center gap-3">
+            <span className="w-10 h-10 md:w-12 md:h-12 inline-block" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>
+              <RunningBanana legPhase={0} />
+            </span>
             Tally Me Banana
+            <span className="w-10 h-10 md:w-12 md:h-12 inline-block" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))', transform: 'scaleX(-1)' }}>
+              <RunningBanana legPhase={0} />
+            </span>
           </h1>
           <p className="text-muted-foreground">
             Tap to count. Long press to edit.
