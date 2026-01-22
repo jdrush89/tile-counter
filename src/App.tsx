@@ -744,38 +744,42 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     }
   }, [])
 
-  if (idleState === 'peeking') {
-    return (
-      <motion.div
-        initial={{ opacity: 0, x: peekSide === 'left' ? -10 : 10 }}
-        animate={{ opacity: 0.9, x: 0 }}
-        exit={{ opacity: 0, x: peekSide === 'left' ? -10 : 10 }}
-        transition={{ duration: 0.3 }}
-        className="absolute inset-0 pointer-events-none overflow-visible"
-      >
-        <PeekingAnimal variant={animalType} side={peekSide} />
-      </motion.div>
-    )
-  }
-
-  if (idleState === 'hidden') return null
-
   const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10
-  
+
   return (
-    <motion.div
-      className={`absolute pointer-events-none ${isLargeAnimal ? 'w-24 h-24 md:w-28 md:h-28' : 'w-14 h-14 md:w-18 md:h-18'}`}
-      style={{ 
-        left: `${position.x}%`, 
-        top: `${position.y}%`,
-        transform: `translateX(-50%) translateY(-50%) scaleX(${direction})`,
-      }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 0.95 }}
-      exit={{ opacity: 0 }}
-    >
-      <RunningAnimal variant={animalType} legPhase={legPhase} />
-    </motion.div>
+    <AnimatePresence mode="wait">
+      {idleState === 'peeking' && (
+        <motion.div
+          key="peeking"
+          initial={{ opacity: 0, x: peekSide === 'left' ? -20 : 20 }}
+          animate={{ opacity: 0.9, x: 0 }}
+          exit={{ opacity: 0, x: peekSide === 'left' ? -20 : 20 }}
+          transition={{ 
+            duration: 0.4,
+            ease: "easeInOut"
+          }}
+          className="absolute inset-0 pointer-events-none overflow-visible"
+        >
+          <PeekingAnimal variant={animalType} side={peekSide} />
+        </motion.div>
+      )}
+      {(idleState === 'walking' || idleState === 'running') && (
+        <motion.div
+          key="moving"
+          className={`absolute pointer-events-none ${isLargeAnimal ? 'w-24 h-24 md:w-28 md:h-28' : 'w-14 h-14 md:w-18 md:h-18'}`}
+          style={{ 
+            left: `${position.x}%`, 
+            top: `${position.y}%`,
+            transform: `translateX(-50%) translateY(-50%) scaleX(${direction})`,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.95 }}
+          exit={{ opacity: 0 }}
+        >
+          <RunningAnimal variant={animalType} legPhase={legPhase} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
