@@ -1073,7 +1073,7 @@ function TallyApp({ user }: { user: UserInfo }) {
       <div className="relative max-w-4xl mx-auto space-y-6">
         <header className="text-center space-y-2 py-6">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            Tally
+            Tally Me Banana
           </h1>
           <p className="text-muted-foreground">
             Tap to count. Long press to edit.
