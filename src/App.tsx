@@ -1087,6 +1087,9 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     }
   }, [forcePeek])
 
+  const forceFeedingRef = useRef(forceFeeding)
+  forceFeedingRef.current = forceFeeding
+
   useEffect(() => {
     if (forceFeeding) {
       clearAnimations()
@@ -1105,6 +1108,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
       const targetX = 50
       
       const animateToCenter = (timestamp: number) => {
+        if (!forceFeedingRef.current) return
         if (!startTimeRef.current) startTimeRef.current = timestamp
         const elapsed = timestamp - startTimeRef.current
         
@@ -1123,6 +1127,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
         } else {
           startTimeRef.current = null
           const animateJump = (ts: number) => {
+            if (!forceFeedingRef.current) return
             if (!startTimeRef.current) startTimeRef.current = ts
             const jumpElapsed = ts - startTimeRef.current
             
@@ -1222,6 +1227,11 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     if (forcePeek || forceFeeding) return
     
     const scheduleIdleAction = () => {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
+      }
+      
       const delay = 3000 + Math.random() * 8000
       
       idleTimerRef.current = window.setTimeout(() => {
@@ -1238,8 +1248,10 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
           setIdleState('peeking')
           
           setTimeout(() => {
-            setIdleState('hidden')
-            scheduleIdleAction()
+            if (!forcePeek && !forceFeeding) {
+              setIdleState('hidden')
+              scheduleIdleAction()
+            }
           }, 2000 + Math.random() * 2000)
         } else {
           const walkDir = Math.random() > 0.5 ? 1 : -1
@@ -1258,6 +1270,10 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
           let lastTimestamp: number | null = null
           
           const animateWalk = (timestamp: number) => {
+            if (forceFeedingRef.current) {
+              return
+            }
+            
             if (!lastTimestamp) lastTimestamp = timestamp
             const deltaTime = timestamp - lastTimestamp
             lastTimestamp = timestamp
@@ -1305,6 +1321,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     return () => {
       if (idleTimerRef.current) {
         clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
       }
     }
   }, [idleState, isAnimating, isHovered, forcePeek, forceFeeding])
