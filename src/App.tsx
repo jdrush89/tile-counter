@@ -1126,10 +1126,10 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
             if (!startTimeRef.current) startTimeRef.current = ts
             const jumpElapsed = ts - startTimeRef.current
             
-            const jumpPhase = jumpElapsed * 0.015
+            const jumpPhase = jumpElapsed * 0.003
             setLegPhase(jumpPhase)
             
-            const jumpHeight = Math.abs(Math.sin(jumpPhase * 2)) * 15
+            const jumpHeight = Math.abs(Math.sin(jumpPhase * 0.8)) * 12
             setPosition({ x: 50, y: 50 - jumpHeight })
             
             animationRef.current = requestAnimationFrame(animateJump)
