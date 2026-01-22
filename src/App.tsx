@@ -71,6 +71,7 @@ const PREMIUM_ANIMALS = [
   { id: 16, name: 'T-Rex', price: 4.49 },
   { id: 18, name: 'Anglerfish', price: 3.99 },
   { id: 19, name: 'Shark', price: 3.99 },
+  { id: 20, name: 'Whale', price: 100 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
@@ -1056,6 +1057,73 @@ function SwimmingShark({ legPhase }: { legPhase: number }) {
   )
 }
 
+function SwimmingWhale({ legPhase }: { legPhase: number }) {
+  const bodyWave = Math.sin(legPhase * 0.8) * 2
+  const tailSwish = Math.sin(legPhase * 1.2) * 20
+  const finWave = Math.sin(legPhase * 1.5) * 12
+  const spoutPhase = Math.sin(legPhase * 0.5)
+  const showSpout = spoutPhase > 0.8
+  
+  return (
+    <svg viewBox="-10 -5 75 55" className="w-full h-full">
+      <g transform={`translate(0, ${bodyWave})`}>
+        <g transform={`rotate(${tailSwish}, 8, 24)`}>
+          <path 
+            d="M8 24 Q0 16 -4 24 Q0 32 8 24" 
+            fill="white" 
+            fillOpacity="0.85"
+          />
+        </g>
+        <ellipse cx="32" cy="24" rx="26" ry="16" fill="white" fillOpacity="0.9" />
+        <ellipse cx="32" cy="28" rx="20" ry="10" fill="white" fillOpacity="0.7" />
+        <g transform={`rotate(${finWave}, 24, 14)`}>
+          <path 
+            d="M24 14 Q20 4 28 8 Q32 12 28 16" 
+            fill="white" 
+            fillOpacity="0.85"
+          />
+        </g>
+        <g transform={`rotate(${-finWave * 0.7}, 20, 34)`}>
+          <ellipse cx="16" cy="36" rx="6" ry="3" fill="white" fillOpacity="0.75" />
+        </g>
+        <g transform={`rotate(${finWave * 0.7}, 44, 34)`}>
+          <ellipse cx="48" cy="36" rx="6" ry="3" fill="white" fillOpacity="0.75" />
+        </g>
+        <circle cx="50" cy="20" r="3" fill="oklch(0.25 0 0)" fillOpacity="0.5" />
+        <circle cx="51" cy="19" r="1.5" fill="oklch(0.25 0 0)" fillOpacity="0.8" />
+        <path 
+          d="M56 24 Q60 26 58 28" 
+          stroke="white" 
+          strokeWidth="2" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.8"
+        />
+        {showSpout && (
+          <g opacity={0.6 + (spoutPhase - 0.8) * 2}>
+            <path 
+              d={`M36 8 Q34 ${-2 - (spoutPhase - 0.8) * 10} 32 ${-6 - (spoutPhase - 0.8) * 8}`}
+              stroke="white" 
+              strokeWidth="2" 
+              fill="none" 
+              strokeLinecap="round"
+            />
+            <path 
+              d={`M36 8 Q38 ${-2 - (spoutPhase - 0.8) * 10} 40 ${-6 - (spoutPhase - 0.8) * 8}`}
+              stroke="white" 
+              strokeWidth="2" 
+              fill="none" 
+              strokeLinecap="round"
+            />
+            <circle cx="32" cy={-8 - (spoutPhase - 0.8) * 8} r="2" fill="white" fillOpacity="0.7" />
+            <circle cx="40" cy={-8 - (spoutPhase - 0.8) * 8} r="2" fill="white" fillOpacity="0.7" />
+          </g>
+        )}
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -1098,6 +1166,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <SwimmingAnglerfish legPhase={legPhase} />
     case 19:
       return <SwimmingShark legPhase={legPhase} />
+    case 20:
+      return <SwimmingWhale legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
@@ -1105,7 +1175,7 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
 
 function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
   const peekAmount = 12
-  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13 || variant === 14 || variant === 15 || variant === 16 || variant === 18
+  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13 || variant === 14 || variant === 15 || variant === 16 || variant === 18 || variant === 20
   const isBanana = variant === 11
   
   return (
@@ -1422,7 +1492,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     }
   }, [])
 
-  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15 || animalType === 16 || animalType === 18
+  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15 || animalType === 16 || animalType === 18 || animalType === 20
 
   return (
     <AnimatePresence mode="wait">
