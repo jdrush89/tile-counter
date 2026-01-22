@@ -77,7 +77,7 @@ function RunningDog({ legPhase }: { legPhase: number }) {
       <ellipse cx="25" cy="20" rx="14" ry="9" fill="white" fillOpacity="0.9" />
       <circle cx="38" cy="15" r="7" fill="white" fillOpacity="0.9" />
       <ellipse cx="41" cy="14" rx="2.5" ry="3" fill="white" />
-      <circle cx="40" cy="13" r="1.5" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="40" cy="13" r="1.5" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
       <ellipse cx="43" cy="16" rx="2" ry="1.5" fill="white" fillOpacity="0.7" />
       <path d="M35 9 Q38 4 36 8" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
       <path d="M38 8 Q42 3 40 7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
@@ -111,8 +111,8 @@ function RunningCat({ legPhase }: { legPhase: number }) {
       <circle cx="38" cy="16" r="6" fill="white" fillOpacity="0.9" />
       <path d="M33 12 L31 6 L35 11" fill="white" fillOpacity="0.9" />
       <path d="M41 10 L43 4 L38 9" fill="white" fillOpacity="0.9" />
-      <circle cx="36" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
-      <circle cx="40" cy="15" r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="36" cy="15" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+      <circle cx="40" cy="15" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
       <ellipse cx="38" cy="18" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
       <line x1="42" y1="16" x2="48" y2="14" stroke="white" strokeWidth="1" strokeLinecap="round" />
       <line x1="42" y1="18" x2="48" y2="18" stroke="white" strokeWidth="1" strokeLinecap="round" />
@@ -147,14 +147,14 @@ function RunningBunny({ legPhase }: { legPhase: number }) {
         <circle cx="34" cy="20" r="6" fill="white" fillOpacity="0.9" />
         <g transform={`rotate(${earWiggle - 10}, 32, 20)`}>
           <ellipse cx="30" cy="8" rx="2.5" ry="8" fill="white" fillOpacity="0.9" />
-          <ellipse cx="30" cy="8" rx="1.2" ry="5" fill="currentColor" fillOpacity="0.15" />
+          <ellipse cx="30" cy="8" rx="1.2" ry="5" fill="oklch(0.7 0.1 0)" fillOpacity="0.3" />
         </g>
         <g transform={`rotate(${-earWiggle + 10}, 36, 20)`}>
           <ellipse cx="38" cy="8" rx="2.5" ry="8" fill="white" fillOpacity="0.9" />
-          <ellipse cx="38" cy="8" rx="1.2" ry="5" fill="currentColor" fillOpacity="0.15" />
+          <ellipse cx="38" cy="8" rx="1.2" ry="5" fill="oklch(0.7 0.1 0)" fillOpacity="0.3" />
         </g>
-        <circle cx="32" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
-        <circle cx="37" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <circle cx="32" cy="19" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <circle cx="37" cy="19" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
         <ellipse cx="34.5" cy="22" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
         <circle cx="12" cy="26" r="4" fill="white" fillOpacity="0.9" />
         <g transform={`rotate(${legKick}, 28, 32)`}>
@@ -179,7 +179,7 @@ function RunningBird({ legPhase }: { legPhase: number }) {
         <ellipse cx="25" cy="24" rx="10" ry="8" fill="white" fillOpacity="0.9" />
         <circle cx="36" cy="18" r="6" fill="white" fillOpacity="0.9" />
         <path d="M40 17 L48 16 L40 19 Z" fill="white" fillOpacity="0.8" />
-        <circle cx="38" cy="16" r="1.5" fill="currentColor" fillOpacity="0.4" />
+        <circle cx="38" cy="16" r="1.5" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
         <g transform={`rotate(${-wingFlap}, 25, 20)`}>
           <ellipse cx="20" cy="14" rx="8" ry="4" fill="white" fillOpacity="0.85" />
         </g>
@@ -219,8 +219,8 @@ function RunningSnake({ legPhase }: { legPhase: number }) {
         opacity="0.9"
       />
       <circle cx="42" cy={21 + wave2} r="4" fill="white" fillOpacity="0.9" />
-      <circle cx="40" cy={20 + wave2} r="1" fill="currentColor" fillOpacity="0.4" />
-      <circle cx="44" cy={20 + wave2} r="1" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="40" cy={20 + wave2} r="1" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+      <circle cx="44" cy={20 + wave2} r="1" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
       <path
         d={`M46 ${22 + wave2} L${48 + tongueFlick} ${21 + wave2} M${47 + tongueFlick} ${21 + wave2} L${49 + tongueFlick} ${20 + wave2} M${47 + tongueFlick} ${21 + wave2} L${49 + tongueFlick} ${23 + wave2}`}
         stroke="white"
@@ -248,7 +248,7 @@ function RunningOstrich({ legPhase }: { legPhase: number }) {
       </g>
       <path d={`M28 22 Q34 ${14 + neckBob} 38 ${10 + neckBob}`} stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
       <circle cx="40" cy={8 + neckBob} r="4" fill="white" fillOpacity="0.9" />
-      <circle cx="42" cy={7 + neckBob} r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="42" cy={7 + neckBob} r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
       <path d={`M44 ${9 + neckBob} L48 ${10 + neckBob}`} stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
       <g transform={`rotate(${frontLegAngle}, 24, 30)`}>
         <line x1="24" y1="30" x2="24" y2="40" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -272,8 +272,8 @@ function RunningGorilla({ legPhase }: { legPhase: number }) {
         <circle cx="32" cy="14" r="6" fill="white" fillOpacity="0.9" />
         <ellipse cx="28" cy="12" rx="2" ry="2.5" fill="white" fillOpacity="0.7" />
         <ellipse cx="36" cy="12" rx="2" ry="2.5" fill="white" fillOpacity="0.7" />
-        <circle cx="30" cy="14" r="1.2" fill="currentColor" fillOpacity="0.4" />
-        <circle cx="34" cy="14" r="1.2" fill="currentColor" fillOpacity="0.4" />
+        <circle cx="30" cy="14" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <circle cx="34" cy="14" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
         <ellipse cx="32" cy="17" rx="2.5" ry="1.5" fill="white" fillOpacity="0.6" />
         <g transform={`rotate(${armSwing}, 30, 22)`}>
           <path d="M30 22 Q36 28 38 36" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
@@ -306,8 +306,8 @@ function RunningPanther({ legPhase }: { legPhase: number }) {
       <circle cx="40" cy="16" r="5" fill="white" fillOpacity="0.9" />
       <path d="M37 13 L35 8 L38 12" fill="white" fillOpacity="0.9" />
       <path d="M42 12 L44 7 L41 11" fill="white" fillOpacity="0.9" />
-      <circle cx="38" cy="15" r="1" fill="currentColor" fillOpacity="0.4" />
-      <circle cx="42" cy="15" r="1" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="38" cy="15" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+      <circle cx="42" cy="15" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
       <ellipse cx="40" cy="18" rx="1.5" ry="0.8" fill="white" fillOpacity="0.6" />
       <g transform={`rotate(${frontLegAngle}, 32, 24)`}>
         <line x1="32" y1="24" x2="32" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
@@ -344,8 +344,8 @@ function RunningDragon({ legPhase }: { legPhase: number }) {
       <circle cx="38" cy="20" r="5" fill="white" fillOpacity="0.9" />
       <path d="M36 16 L34 12 L37 15" fill="white" fillOpacity="0.9" />
       <path d="M40 15 L42 11 L40 15" fill="white" fillOpacity="0.9" />
-      <circle cx="36" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
-      <circle cx="40" cy="19" r="1.2" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="36" cy="19" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+      <circle cx="40" cy="19" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
       <ellipse cx="38" cy="22" rx="1.5" ry="1" fill="white" fillOpacity="0.6" />
       <path
         d={`M43 21 L${46 + fireFlicker} 20 L${48 + fireFlicker} 21 L${46 + fireFlicker} 22 L43 21`}
@@ -387,7 +387,7 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
         <ellipse cx="38" cy="16" rx="5" ry="4.5" fill="white" fillOpacity="0.9" />
         <path d="M42 16 L48 15 L42 18 Z" fill="white" fillOpacity="0.95" />
         <path d="M42 16.5 L46 16" stroke="white" strokeWidth="0.5" opacity="0.5" />
-        <circle cx="40" cy="15" r="1" fill="currentColor" fillOpacity="0.5" />
+        <circle cx="40" cy="15" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
         <path d="M35 12 Q33 8 36 11" fill="white" fillOpacity="0.9" />
         <path d="M39 11 Q38 7 41 10" fill="white" fillOpacity="0.9" />
         <ellipse cx="36" cy="14" rx="1.5" ry="2" fill="white" fillOpacity="0.6" />
@@ -438,10 +438,10 @@ function RunningCthulhu({ legPhase }: { legPhase: number }) {
           <path d="M40 14 Q44 10 46 12" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.6" />
         </g>
         <ellipse cx="26" cy="14" rx="8" ry="7" fill="white" fillOpacity="0.9" />
-        <circle cx="22" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
-        <circle cx="30" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
-        <circle cx="22" cy="12" r="1" fill="currentColor" fillOpacity="0.5" />
-        <circle cx="30" cy="12" r="1" fill="currentColor" fillOpacity="0.5" />
+        <circle cx="22" cy="12" r="2.5" fill="oklch(0.25 0 0)" fillOpacity="0.5" />
+        <circle cx="30" cy="12" r="2.5" fill="oklch(0.25 0 0)" fillOpacity="0.5" />
+        <circle cx="22" cy="12" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.8" />
+        <circle cx="30" cy="12" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.8" />
         <path d={`M22 18 Q${20 + tentacleWave1} 28 ${18 + tentacleWave1} 38`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
         <path d={`M25 19 Q${24 + tentacleWave2} 30 ${22 + tentacleWave2} 40`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
         <path d={`M27 19 Q${28 + tentacleWave3} 30 ${30 + tentacleWave3} 40`} stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
@@ -483,12 +483,12 @@ function RunningBanana({ legPhase }: { legPhase: number }) {
           strokeLinecap="round"
           opacity="0.9"
         />
-        <ellipse cx="18" cy="16" rx="1.5" ry="2" fill="currentColor" fillOpacity="0.4" />
-        <ellipse cx="26" cy="14" rx="1.5" ry="2" fill="currentColor" fillOpacity="0.4" />
+        <ellipse cx="18" cy="16" rx="1.5" ry="2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <ellipse cx="26" cy="14" rx="1.5" ry="2" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
         <path
           d="M20 22 Q22 24 24 22"
-          stroke="currentColor"
-          strokeOpacity="0.4"
+          stroke="oklch(0.25 0 0)"
+          strokeOpacity="0.7"
           strokeWidth="1.5"
           fill="none"
           strokeLinecap="round"
