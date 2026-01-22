@@ -608,7 +608,7 @@ function RunningLizardKing({ legPhase }: { legPhase: number }) {
   const spineWiggle = Math.sin(legPhase * 1.5) * 2
   
   return (
-    <svg viewBox="0 0 60 50" className="w-full h-full">
+    <svg viewBox="-10 0 70 50" className="w-full h-full">
       <g transform={`translate(0, ${-bodyBob})`}>
         <path 
           d={`M8 28 Q${4 + tailWave} 26 ${2 + tailWave * 0.8} 22 Q${0 + tailWave * 0.6} 18 ${-2 + tailWave * 0.4} 14`}
