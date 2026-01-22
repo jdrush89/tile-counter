@@ -750,7 +750,7 @@ function RunningTRex({ legPhase }: { legPhase: number }) {
   const jawSnap = Math.abs(Math.sin(legPhase * 1.5)) * 4
   
   return (
-    <svg viewBox="-5 0 65 50" className="w-full h-full">
+    <svg viewBox="-20 0 80 55" className="w-full h-full">
       <g transform={`translate(0, ${-bodyBob})`}>
         <path 
           d={`M10 28 Q${6 + tailWave} 26 ${2 + tailWave * 0.8} 22 Q${-2 + tailWave * 0.6} 18 ${-4 + tailWave * 0.4} 14`}
