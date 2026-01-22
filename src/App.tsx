@@ -54,6 +54,7 @@ const BASE_ANIMALS = [
 ]
 
 const UNLOCKABLE_ANIMALS = [
+  { id: 17, name: 'Alligator', unlockAt: 10 },
   { id: 4, name: 'Snake', unlockAt: 20 },
   { id: 5, name: 'Ostrich', unlockAt: 40 },
   { id: 6, name: 'Gorilla', unlockAt: 60 },
@@ -811,6 +812,74 @@ function RunningTRex({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningAlligator({ legPhase }: { legPhase: number }) {
+  const legSwing = Math.sin(legPhase) * 20
+  const tailWave = Math.sin(legPhase * 0.8) * 10
+  const bodyWiggle = Math.sin(legPhase * 1.2) * 2
+  const jawOpen = Math.abs(Math.sin(legPhase * 1.5)) * 3
+  
+  return (
+    <svg viewBox="-15 0 70 40" className="w-full h-full">
+      <g transform={`translate(0, ${bodyWiggle})`}>
+        <path 
+          d={`M6 22 Q${2 + tailWave} 20 ${-2 + tailWave * 0.8} 18 Q${-6 + tailWave * 0.6} 16 ${-10 + tailWave * 0.4} 16`}
+          stroke="white" 
+          strokeWidth="5" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.9"
+        />
+        <ellipse cx="20" cy="22" rx="16" ry="8" fill="white" fillOpacity="0.9" />
+        <path d="M14 16 L16 14 M18 15 L20 12 M22 15 L24 12 M26 16 L28 14" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.7" />
+        <ellipse cx="40" cy="20" rx="8" ry="6" fill="white" fillOpacity="0.9" />
+        <path 
+          d={`M46 ${22 + jawOpen * 0.5} Q50 ${23 + jawOpen} 54 ${22 + jawOpen * 0.5}`}
+          stroke="white" 
+          strokeWidth="4" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.9"
+        />
+        <path 
+          d={`M46 ${18 - jawOpen * 0.3} Q50 ${17 - jawOpen * 0.5} 54 ${18 - jawOpen * 0.3}`}
+          stroke="white" 
+          strokeWidth="4" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.9"
+        />
+        <path 
+          d={`M48 ${21 + jawOpen * 0.3} L49 ${23 + jawOpen * 0.4} M51 ${21 + jawOpen * 0.3} L52 ${23 + jawOpen * 0.4}`}
+          stroke="white" 
+          strokeWidth="1" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.6"
+        />
+        <circle cx="42" cy="16" r="2" fill="oklch(0.25 0 0)" fillOpacity="0.5" />
+        <circle cx="42" cy="16" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.8" />
+        <ellipse cx="44" cy="14" rx="1.5" ry="1" fill="white" fillOpacity="0.7" />
+        <g transform={`rotate(${legSwing}, 28, 28)`}>
+          <path d="M28 28 Q30 32 28 36" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M28 36 L26 38 M28 36 L28 39 M28 36 L30 38" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 32, 28)`}>
+          <path d="M32 28 Q34 32 32 36" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M32 36 L30 38 M32 36 L32 39 M32 36 L34 38" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 12, 28)`}>
+          <path d="M12 28 Q10 32 12 36" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M12 36 L10 38 M12 36 L12 39 M12 36 L14 38" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+        </g>
+        <g transform={`rotate(${legSwing}, 16, 28)`}>
+          <path d="M16 28 Q18 32 16 36" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M16 36 L14 38 M16 36 L16 39 M16 36 L18 38" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.8" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -847,6 +916,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <RunningZombie legPhase={legPhase} />
     case 16:
       return <RunningTRex legPhase={legPhase} />
+    case 17:
+      return <RunningAlligator legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
