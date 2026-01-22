@@ -1073,7 +1073,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
   }, [isHovered, idleState])
 
   useEffect(() => {
-    if (forcePeek && idleState === 'hidden') {
+    if (forcePeek) {
       clearAnimations()
       if (idleTimerRef.current) {
         clearTimeout(idleTimerRef.current)
@@ -1088,7 +1088,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
   }, [forcePeek])
 
   useEffect(() => {
-    if (forceFeeding && idleState !== 'feeding') {
+    if (forceFeeding) {
       clearAnimations()
       if (idleTimerRef.current) {
         clearTimeout(idleTimerRef.current)
@@ -1126,10 +1126,10 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
             if (!startTimeRef.current) startTimeRef.current = ts
             const jumpElapsed = ts - startTimeRef.current
             
-            const jumpPhase = jumpElapsed * 0.003
+            const jumpPhase = jumpElapsed * 0.005
             setLegPhase(jumpPhase)
             
-            const jumpHeight = Math.abs(Math.sin(jumpPhase * 0.8)) * 12
+            const jumpHeight = Math.abs(Math.sin(jumpPhase * 1.2)) * 12
             setPosition({ x: 50, y: 50 - jumpHeight })
             
             animationRef.current = requestAnimationFrame(animateJump)
@@ -1645,7 +1645,8 @@ function TallyApp({ user }: { user: UserInfo }) {
   }
 
   const handleCallAnimals = () => {
-    if (forcePeekAll || forceFeedingAll) return
+    if (currentTallies.length === 0) return
+    setForceFeedingAll(false)
     setForcePeekAll(true)
     setTimeout(() => {
       setForcePeekAll(false)
@@ -1653,7 +1654,8 @@ function TallyApp({ user }: { user: UserInfo }) {
   }
 
   const handleFeedAnimals = () => {
-    if (forcePeekAll || forceFeedingAll) return
+    if (currentTallies.length === 0) return
+    setForcePeekAll(false)
     setForceFeedingAll(true)
     setTimeout(() => {
       setForceFeedingAll(false)
@@ -1696,7 +1698,7 @@ function TallyApp({ user }: { user: UserInfo }) {
               variant="outline"
               size="sm"
               onClick={handleCallAnimals}
-              disabled={forcePeekAll || forceFeedingAll || currentTallies.length === 0}
+              disabled={forcePeekAll || currentTallies.length === 0}
               className="gap-2"
             >
               <Megaphone size={16} weight="bold" />
@@ -1706,7 +1708,7 @@ function TallyApp({ user }: { user: UserInfo }) {
               variant="outline"
               size="sm"
               onClick={handleFeedAnimals}
-              disabled={forcePeekAll || forceFeedingAll || currentTallies.length === 0}
+              disabled={forceFeedingAll || currentTallies.length === 0}
               className="gap-2"
             >
               <BowlFood size={16} weight="bold" />
