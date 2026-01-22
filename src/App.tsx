@@ -64,6 +64,7 @@ const UNLOCKABLE_ANIMALS = [
 const PREMIUM_ANIMALS = [
   { id: 9, name: 'Griffin', price: 2.99 },
   { id: 10, name: 'Cthulhu', price: 3.99 },
+  { id: 13, name: 'Sasquatch', price: 4.99 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
@@ -554,6 +555,49 @@ function RunningSquirrel({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningSasquatch({ legPhase }: { legPhase: number }) {
+  const armSwing = Math.sin(legPhase) * 25
+  const legSwing = Math.sin(legPhase + Math.PI) * 30
+  const bodyBob = Math.abs(Math.sin(legPhase)) * 3
+  const shoulderRoll = Math.sin(legPhase * 2) * 3
+  
+  return (
+    <svg viewBox="0 0 55 45" className="w-full h-full">
+      <g transform={`translate(0, ${-bodyBob})`}>
+        <ellipse cx="27" cy="22" rx="14" ry="12" fill="white" fillOpacity="0.9" />
+        <path d="M18 16 Q16 12 14 14 Q12 18 16 20" fill="white" fillOpacity="0.85" />
+        <path d="M36 16 Q38 12 40 14 Q42 18 38 20" fill="white" fillOpacity="0.85" />
+        <ellipse cx="27" cy="14" rx="9" ry="8" fill="white" fillOpacity="0.9" />
+        <ellipse cx="27" cy="10" rx="5" ry="3" fill="white" fillOpacity="0.85" />
+        <path d="M21 10 Q19 6 22 8" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
+        <path d="M33 10 Q35 6 32 8" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
+        <circle cx="23" cy="13" r="1.8" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <circle cx="31" cy="13" r="1.8" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <ellipse cx="27" cy="17" rx="3" ry="2" fill="white" fillOpacity="0.6" />
+        <circle cx="26" cy="16.5" r="0.6" fill="oklch(0.25 0 0)" fillOpacity="0.5" />
+        <circle cx="28" cy="16.5" r="0.6" fill="oklch(0.25 0 0)" fillOpacity="0.5" />
+        <path d="M24 20 Q27 22 30 20" stroke="oklch(0.25 0 0)" strokeOpacity="0.5" strokeWidth="1" fill="none" strokeLinecap="round" />
+        <g transform={`rotate(${armSwing + shoulderRoll}, 18, 20)`}>
+          <path d="M18 20 Q12 28 8 36" stroke="white" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.9" />
+          <ellipse cx="7" cy="37" rx="3" ry="2.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-armSwing - shoulderRoll}, 36, 20)`}>
+          <path d="M36 20 Q42 28 46 36" stroke="white" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.9" />
+          <ellipse cx="47" cy="37" rx="3" ry="2.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${legSwing}, 22, 32)`}>
+          <path d="M22 32 Q20 38 18 44" stroke="white" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <ellipse cx="17" cy="45" rx="4" ry="2" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 32, 32)`}>
+          <path d="M32 32 Q34 38 36 44" stroke="white" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <ellipse cx="37" cy="45" rx="4" ry="2" fill="white" fillOpacity="0.9" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -582,6 +626,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <RunningBanana legPhase={legPhase} />
     case 12:
       return <RunningSquirrel legPhase={legPhase} />
+    case 13:
+      return <RunningSasquatch legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
@@ -589,7 +635,7 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
 
 function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
   const peekAmount = 12
-  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10
+  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13
   
   return (
     <div
@@ -786,7 +832,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     }
   }, [])
 
-  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10
+  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13
 
   return (
     <AnimatePresence mode="wait">
