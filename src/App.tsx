@@ -1020,10 +1020,11 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
 function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
   const peekAmount = 12
   const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13 || variant === 14 || variant === 15 || variant === 16 || variant === 18
+  const isBanana = variant === 11
   
   return (
     <div
-      className={`absolute ${isLargeAnimal ? 'w-16 h-16 md:w-20 md:h-20' : 'w-10 h-10 md:w-12 md:h-12'}`}
+      className={`absolute ${isLargeAnimal ? 'w-16 h-16 md:w-20 md:h-20' : isBanana ? 'w-14 h-14 md:w-16 md:h-16' : 'w-10 h-10 md:w-12 md:h-12'}`}
       style={{
         top: '60%',
         left: side === 'left' ? `-${peekAmount}%` : 'auto',
