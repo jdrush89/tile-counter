@@ -518,14 +518,14 @@ function RunningBanana({ legPhase }: { legPhase: number }) {
 function RunningSquirrel({ legPhase }: { legPhase: number }) {
   const frontLegAngle = Math.sin(legPhase) * 35
   const backLegAngle = Math.sin(legPhase + Math.PI) * 35
-  const tailWave = Math.sin(legPhase * 0.8) * 12
+  const tailWave = Math.sin(legPhase * 0.8) * 10
   const bodyBob = Math.abs(Math.sin(legPhase)) * 2
   
   return (
     <svg viewBox="0 0 50 40" className="w-full h-full">
       <g transform={`translate(0, ${-bodyBob})`}>
         <path 
-          d={`M8 18 Q${4 + tailWave} 8 ${6 + tailWave} 4 Q${10 + tailWave} 2 ${12 + tailWave} 6 Q${14 + tailWave} 10 12 16`}
+          d={`M14 20 Q${10 + tailWave} 12 ${8 + tailWave} 6 Q${10 + tailWave} 2 ${14 + tailWave} 4 Q${18 + tailWave} 8 16 18`}
           fill="white" 
           fillOpacity="0.9"
         />
