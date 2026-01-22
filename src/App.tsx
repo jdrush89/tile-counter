@@ -379,7 +379,7 @@ function RunningGriffin({ legPhase }: { legPhase: number }) {
   const headBob = Math.sin(legPhase * 2) * 2
   
   return (
-    <svg viewBox="0 0 55 40" className="w-full h-full">
+    <svg viewBox="-10 0 65 45" className="w-full h-full">
       <ellipse cx="24" cy="22" rx="13" ry="9" fill="white" fillOpacity="0.9" />
       <path d="M34 18 Q38 16 36 20" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
       <g transform={`rotate(${-wingFlap}, 22, 18)`}>
