@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, BowlFood } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
 
@@ -1036,9 +1036,9 @@ function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'rig
   )
 }
 
-type IdleState = 'hidden' | 'peeking' | 'walking' | 'running'
+type IdleState = 'hidden' | 'peeking' | 'walking' | 'running' | 'feeding'
 
-function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalType }: { isAnimating: boolean; isHovered: boolean; animalIndex: number; totalAnimals: number; animalType: number }) {
+function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalType, forcePeek, forceFeeding }: { isAnimating: boolean; isHovered: boolean; animalIndex: number; totalAnimals: number; animalType: number; forcePeek?: boolean; forceFeeding?: boolean }) {
   const [legPhase, setLegPhase] = useState(0)
   const [position, setPosition] = useState({ x: -20, y: 65 })
   const [direction, setDirection] = useState(1)
@@ -1071,6 +1071,107 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
       setIdleState('hidden')
     }
   }, [isHovered, idleState])
+
+  useEffect(() => {
+    if (forcePeek && idleState === 'hidden') {
+      clearAnimations()
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
+      }
+      const side = Math.random() > 0.5 ? 'left' : 'right'
+      setPeekSide(side)
+      setIdleState('peeking')
+    } else if (!forcePeek && idleState === 'peeking') {
+      setIdleState('hidden')
+    }
+  }, [forcePeek])
+
+  useEffect(() => {
+    if (forceFeeding && idleState !== 'feeding') {
+      clearAnimations()
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
+      }
+      
+      const newDirection = Math.random() > 0.5 ? 1 : -1
+      setDirection(newDirection)
+      const startX = newDirection === 1 ? -25 : 125
+      setPosition({ x: startX, y: 50 })
+      setIdleState('feeding')
+      startTimeRef.current = null
+      
+      const targetX = 50
+      
+      const animateToCenter = (timestamp: number) => {
+        if (!startTimeRef.current) startTimeRef.current = timestamp
+        const elapsed = timestamp - startTimeRef.current
+        
+        const phase = elapsed * 0.02
+        setLegPhase(phase)
+        
+        const progress = Math.min(elapsed / 600, 1)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        
+        const newX = startX + (targetX - startX) * eased
+        const bounce = Math.sin(phase * 2) * 2
+        setPosition({ x: newX, y: 50 + bounce })
+        
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animateToCenter)
+        } else {
+          startTimeRef.current = null
+          const animateJump = (ts: number) => {
+            if (!startTimeRef.current) startTimeRef.current = ts
+            const jumpElapsed = ts - startTimeRef.current
+            
+            const jumpPhase = jumpElapsed * 0.015
+            setLegPhase(jumpPhase)
+            
+            const jumpHeight = Math.abs(Math.sin(jumpPhase * 2)) * 15
+            setPosition({ x: 50, y: 50 - jumpHeight })
+            
+            animationRef.current = requestAnimationFrame(animateJump)
+          }
+          animationRef.current = requestAnimationFrame(animateJump)
+        }
+      }
+      
+      animationRef.current = requestAnimationFrame(animateToCenter)
+    } else if (!forceFeeding && idleState === 'feeding') {
+      clearAnimations()
+      
+      const exitDirection = direction
+      const startX = 50
+      const targetX = exitDirection === 1 ? 125 : -25
+      setPosition({ x: startX, y: 50 })
+      startTimeRef.current = null
+      
+      const animateExit = (timestamp: number) => {
+        if (!startTimeRef.current) startTimeRef.current = timestamp
+        const elapsed = timestamp - startTimeRef.current
+        
+        const phase = elapsed * 0.025
+        setLegPhase(phase)
+        
+        const progress = Math.min(elapsed / 500, 1)
+        const eased = progress * progress
+        
+        const newX = startX + (targetX - startX) * eased
+        const bounce = Math.sin(phase * 2) * 2
+        setPosition({ x: newX, y: 50 + bounce })
+        
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animateExit)
+        } else {
+          setIdleState('hidden')
+        }
+      }
+      
+      animationRef.current = requestAnimationFrame(animateExit)
+    }
+  }, [forceFeeding])
 
   useEffect(() => {
     if (isAnimating) {
@@ -1118,12 +1219,13 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
 
   useEffect(() => {
     if (idleState !== 'hidden' && idleState !== 'peeking') return
+    if (forcePeek || forceFeeding) return
     
     const scheduleIdleAction = () => {
       const delay = 3000 + Math.random() * 8000
       
       idleTimerRef.current = window.setTimeout(() => {
-        if (isAnimating || isHovered) {
+        if (isAnimating || isHovered || forcePeek || forceFeeding) {
           scheduleIdleAction()
           return
         }
@@ -1205,7 +1307,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
         clearTimeout(idleTimerRef.current)
       }
     }
-  }, [idleState, isAnimating, isHovered])
+  }, [idleState, isAnimating, isHovered, forcePeek, forceFeeding])
 
   useEffect(() => {
     return () => {
@@ -1235,7 +1337,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
           <PeekingAnimal variant={animalType} side={peekSide} />
         </motion.div>
       )}
-      {(idleState === 'walking' || idleState === 'running') && (
+      {(idleState === 'walking' || idleState === 'running' || idleState === 'feeding') && (
         <motion.div
           key="moving"
           className={`absolute pointer-events-none ${isLargeAnimal ? 'w-24 h-24 md:w-28 md:h-28' : 'w-14 h-14 md:w-18 md:h-18'}`}
@@ -1259,6 +1361,8 @@ function TallyTile({
   tally, 
   isAnimating,
   animatingCount,
+  forcePeek,
+  forceFeeding,
   onIncrement, 
   onStartLongPress, 
   onCancelLongPress,
@@ -1267,6 +1371,8 @@ function TallyTile({
   tally: Tally
   isAnimating: boolean
   animatingCount: number
+  forcePeek?: boolean
+  forceFeeding?: boolean
   onIncrement: () => void
   onStartLongPress: () => void
   onCancelLongPress: () => void
@@ -1309,10 +1415,20 @@ function TallyTile({
               animalIndex={i}
               totalAnimals={maxAnimals}
               animalType={animalType}
+              forcePeek={false}
+              forceFeeding={false}
             />
           ))
         ) : (
-          <TileAnimal isAnimating={false} isHovered={isHovered} animalIndex={0} totalAnimals={1} animalType={animalType} />
+          <TileAnimal 
+            isAnimating={false} 
+            isHovered={isHovered} 
+            animalIndex={0} 
+            totalAnimals={1} 
+            animalType={animalType}
+            forcePeek={forcePeek}
+            forceFeeding={forceFeeding}
+          />
         )}
         <CardContent className="h-full flex flex-col items-center justify-center p-4">
           <motion.span
@@ -1353,6 +1469,8 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false)
   const [animalToPurchase, setAnimalToPurchase] = useState<{ id: number; name: string; price: number } | null>(null)
   const [purchaseTallyId, setPurchaseTallyId] = useState<string | null>(null)
+  const [forcePeekAll, setForcePeekAll] = useState(false)
+  const [forceFeedingAll, setForceFeedingAll] = useState(false)
 
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
@@ -1526,6 +1644,22 @@ function TallyApp({ user }: { user: UserInfo }) {
     setIsEditingName(false)
   }
 
+  const handleCallAnimals = () => {
+    if (forcePeekAll || forceFeedingAll) return
+    setForcePeekAll(true)
+    setTimeout(() => {
+      setForcePeekAll(false)
+    }, 2500)
+  }
+
+  const handleFeedAnimals = () => {
+    if (forcePeekAll || forceFeedingAll) return
+    setForceFeedingAll(true)
+    setTimeout(() => {
+      setForceFeedingAll(false)
+    }, 4000)
+  }
+
   const closeEditMode = () => {
     setEditingId(null)
     setIsEditingName(false)
@@ -1556,6 +1690,30 @@ function TallyApp({ user }: { user: UserInfo }) {
           <p className="text-muted-foreground">
             Tap to count. Long press to edit.
           </p>
+          
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCallAnimals}
+              disabled={forcePeekAll || forceFeedingAll || currentTallies.length === 0}
+              className="gap-2"
+            >
+              <Megaphone size={16} weight="bold" />
+              Call
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleFeedAnimals}
+              disabled={forcePeekAll || forceFeedingAll || currentTallies.length === 0}
+              className="gap-2"
+            >
+              <BowlFood size={16} weight="bold" />
+              Feed
+            </Button>
+          </div>
+          
           <div className="flex items-center justify-center gap-2 pt-1">
             <img 
               src={user.avatarUrl} 
@@ -1747,6 +1905,8 @@ function TallyApp({ user }: { user: UserInfo }) {
                     tally={tally}
                     isAnimating={animatingId === tally.id}
                     animatingCount={animatingId === tally.id ? animatingCount : 0}
+                    forcePeek={forcePeekAll}
+                    forceFeeding={forceFeedingAll}
                     onIncrement={() => handleClick(tally.id)}
                     onStartLongPress={() => startLongPress(tally.id)}
                     onCancelLongPress={cancelLongPress}
