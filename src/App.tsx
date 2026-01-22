@@ -70,6 +70,7 @@ const PREMIUM_ANIMALS = [
   { id: 15, name: 'Zombie', price: 3.49 },
   { id: 16, name: 'T-Rex', price: 4.49 },
   { id: 18, name: 'Anglerfish', price: 3.99 },
+  { id: 19, name: 'Shark', price: 3.99 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
@@ -972,6 +973,89 @@ function SwimmingAnglerfish({ legPhase }: { legPhase: number }) {
   )
 }
 
+function SwimmingShark({ legPhase }: { legPhase: number }) {
+  const bodyWave = Math.sin(legPhase * 1.2) * 2
+  const tailSwish = Math.sin(legPhase * 1.8) * 25
+  const finWave = Math.sin(legPhase * 2) * 10
+  const jawOpen = Math.abs(Math.sin(legPhase * 1.5)) * 2
+  
+  return (
+    <svg viewBox="-5 0 60 40" className="w-full h-full">
+      <g transform={`translate(0, ${bodyWave})`}>
+        <g transform={`rotate(${tailSwish}, 8, 20)`}>
+          <path 
+            d="M8 20 Q2 14 0 20 Q2 26 8 20" 
+            fill="white" 
+            fillOpacity="0.85"
+          />
+        </g>
+        <ellipse cx="28" cy="20" rx="20" ry="10" fill="white" fillOpacity="0.9" />
+        <path 
+          d="M28 10 L26 2 L32 10" 
+          fill="white" 
+          fillOpacity="0.9"
+        />
+        <g transform={`rotate(${finWave}, 20, 28)`}>
+          <path 
+            d="M20 28 L16 34 L24 28" 
+            fill="white" 
+            fillOpacity="0.8"
+          />
+        </g>
+        <g transform={`rotate(${-finWave}, 36, 28)`}>
+          <path 
+            d="M36 28 L32 34 L40 28" 
+            fill="white" 
+            fillOpacity="0.8"
+          />
+        </g>
+        <path 
+          d="M14 18 L10 14 M18 17 L16 12 M22 16 L22 11" 
+          stroke="white" 
+          strokeWidth="1.5" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.6"
+        />
+        <circle cx="40" cy="18" r="2.5" fill="oklch(0.25 0 0)" fillOpacity="0.5" />
+        <circle cx="40" cy="18" r="1.2" fill="oklch(0.25 0 0)" fillOpacity="0.8" />
+        <path 
+          d={`M46 ${18 - jawOpen * 0.3} Q50 ${17 - jawOpen * 0.5} 54 ${18 - jawOpen * 0.3}`}
+          stroke="white" 
+          strokeWidth="3" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.9"
+        />
+        <path 
+          d={`M46 ${22 + jawOpen * 0.5} Q50 ${24 + jawOpen} 54 ${22 + jawOpen * 0.5}`}
+          stroke="white" 
+          strokeWidth="4" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.9"
+        />
+        <path 
+          d={`M48 ${19 + jawOpen * 0.2} L49 ${21 + jawOpen * 0.3} M51 ${19 + jawOpen * 0.15} L52 ${21 + jawOpen * 0.25}`}
+          stroke="white" 
+          strokeWidth="1.5" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.7"
+        />
+        <path 
+          d={`M48 ${21 + jawOpen * 0.3} L49 ${23 + jawOpen * 0.4} M51 ${21 + jawOpen * 0.25} L52 ${23 + jawOpen * 0.35}`}
+          stroke="white" 
+          strokeWidth="1.5" 
+          fill="none" 
+          strokeLinecap="round" 
+          opacity="0.7"
+        />
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -1012,6 +1096,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <RunningAlligator legPhase={legPhase} />
     case 18:
       return <SwimmingAnglerfish legPhase={legPhase} />
+    case 19:
+      return <SwimmingShark legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
