@@ -49,6 +49,7 @@ const BASE_ANIMALS = [
   { id: 1, name: 'Cat', unlockAt: 0 },
   { id: 2, name: 'Bunny', unlockAt: 0 },
   { id: 3, name: 'Bird', unlockAt: 0 },
+  { id: 11, name: 'Banana', unlockAt: 0 },
 ]
 
 const UNLOCKABLE_ANIMALS = [
@@ -460,6 +461,59 @@ function RunningCthulhu({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningBanana({ legPhase }: { legPhase: number }) {
+  const armSwing = Math.sin(legPhase) * 25
+  const legSwing = Math.sin(legPhase + Math.PI) * 30
+  const bodyBob = Math.abs(Math.sin(legPhase)) * 2
+  const lean = Math.sin(legPhase * 2) * 3
+  
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${-bodyBob}) rotate(${lean}, 25, 20)`}>
+        <path
+          d="M20 8 Q14 12 12 20 Q11 28 16 34 Q20 36 24 35 Q28 34 30 30 Q34 22 32 14 Q30 8 26 6 Q22 5 20 8"
+          fill="white"
+          fillOpacity="0.95"
+        />
+        <path
+          d="M22 6 Q24 4 26 5"
+          stroke="white"
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.9"
+        />
+        <ellipse cx="18" cy="16" rx="1.5" ry="2" fill="currentColor" fillOpacity="0.4" />
+        <ellipse cx="26" cy="14" rx="1.5" ry="2" fill="currentColor" fillOpacity="0.4" />
+        <path
+          d="M20 22 Q22 24 24 22"
+          stroke="currentColor"
+          strokeOpacity="0.4"
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <g transform={`rotate(${armSwing}, 14, 18)`}>
+          <line x1="14" y1="18" x2="6" y2="22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="5" cy="23" r="2" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-armSwing}, 30, 16)`}>
+          <line x1="30" y1="16" x2="38" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="39" cy="21" r="2" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${legSwing}, 18, 32)`}>
+          <line x1="18" y1="32" x2="14" y2="40" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="13" cy="41" rx="2.5" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 24, 34)`}>
+          <line x1="24" y1="34" x2="28" y2="42" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="29" cy="43" rx="2.5" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -484,6 +538,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <RunningGriffin legPhase={legPhase} />
     case 10:
       return <RunningCthulhu legPhase={legPhase} />
+    case 11:
+      return <RunningBanana legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
