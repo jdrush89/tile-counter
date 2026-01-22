@@ -66,6 +66,7 @@ const PREMIUM_ANIMALS = [
   { id: 10, name: 'Cthulhu', price: 3.99 },
   { id: 13, name: 'Sasquatch', price: 4.99 },
   { id: 14, name: 'Lizard King', price: 5.99 },
+  { id: 15, name: 'Zombie', price: 3.49 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
@@ -686,6 +687,60 @@ function RunningLizardKing({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningZombie({ legPhase }: { legPhase: number }) {
+  const legSwing = Math.sin(legPhase * 0.7) * 15
+  const armSwing = Math.sin(legPhase * 0.5) * 8
+  const bodyLurch = Math.sin(legPhase * 0.6) * 3
+  const headTilt = Math.sin(legPhase * 0.4) * 5
+  const shuffle = Math.abs(Math.sin(legPhase * 0.7)) * 2
+  
+  return (
+    <svg viewBox="0 0 55 45" className="w-full h-full">
+      <g transform={`translate(${bodyLurch}, ${-shuffle})`}>
+        <ellipse cx="27" cy="24" rx="10" ry="11" fill="white" fillOpacity="0.9" />
+        <path d="M22 18 Q20 16 22 20" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6" />
+        <path d="M32 18 Q34 16 32 20" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6" />
+        <path d="M24 26 Q22 28 20 26" stroke="white" strokeWidth="1" fill="none" opacity="0.5" />
+        <path d="M30 27 Q32 29 34 27" stroke="white" strokeWidth="1" fill="none" opacity="0.5" />
+        
+        <g transform={`rotate(${headTilt}, 27, 16)`}>
+          <ellipse cx="27" cy="12" rx="8" ry="7" fill="white" fillOpacity="0.9" />
+          <ellipse cx="27" cy="6" rx="5" ry="3" fill="white" fillOpacity="0.7" />
+          <path d="M22 5 Q20 3 23 6" stroke="white" strokeWidth="1.5" fill="none" opacity="0.7" />
+          <path d="M32 5 Q34 3 31 6" stroke="white" strokeWidth="1.5" fill="none" opacity="0.7" />
+          <circle cx="24" cy="11" r="2" fill="oklch(0.25 0 0)" fillOpacity="0.6" />
+          <circle cx="30" cy="10" r="2" fill="oklch(0.25 0 0)" fillOpacity="0.6" />
+          <circle cx="24" cy="11" r="0.8" fill="oklch(0.25 0 0)" fillOpacity="0.9" />
+          <circle cx="30" cy="10" r="0.8" fill="oklch(0.25 0 0)" fillOpacity="0.9" />
+          <path d="M25 15 Q27 17 29 15" stroke="oklch(0.25 0 0)" strokeOpacity="0.5" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+          <path d="M26 16 L26 17 M28 16 L28 17" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
+        </g>
+        
+        <g transform={`rotate(${armSwing + 40}, 20, 22)`}>
+          <path d="M20 22 Q14 28 10 32" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
+          <ellipse cx="9" cy="33" rx="2.5" ry="2" fill="white" fillOpacity="0.9" />
+          <path d="M7 32 L6 34 M9 33 L9 36 M11 32 L12 34" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+        </g>
+        
+        <g transform={`rotate(${-armSwing + 50}, 34, 22)`}>
+          <path d="M34 22 Q40 26 44 28" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.9" />
+          <ellipse cx="45" cy="29" rx="2.5" ry="2" fill="white" fillOpacity="0.9" />
+          <path d="M43 28 L42 30 M45 29 L45 32 M47 28 L48 30" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.7" />
+        </g>
+        
+        <g transform={`rotate(${legSwing}, 24, 34)`}>
+          <path d="M24 34 Q22 40 20 46" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <ellipse cx="19" cy="47" rx="3" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-legSwing * 0.8}, 30, 34)`}>
+          <path d="M30 34 Q32 40 34 46" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <ellipse cx="35" cy="47" rx="3" ry="1.5" fill="white" fillOpacity="0.9" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -718,6 +773,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <RunningSasquatch legPhase={legPhase} />
     case 14:
       return <RunningLizardKing legPhase={legPhase} />
+    case 15:
+      return <RunningZombie legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
@@ -725,7 +782,7 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
 
 function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
   const peekAmount = 12
-  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13 || variant === 14
+  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13 || variant === 14 || variant === 15
   
   return (
     <div
@@ -922,7 +979,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     }
   }, [])
 
-  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14
+  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15
 
   return (
     <AnimatePresence mode="wait">
