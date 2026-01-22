@@ -1063,9 +1063,9 @@ function TallyApp({ user }: { user: UserInfo }) {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div 
-        className="fixed inset-0 opacity-[0.04] pointer-events-none"
+        className="fixed inset-0 opacity-[0.08] pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, oklch(0.5 0.1 250) 1px, transparent 0)`,
+          backgroundImage: `radial-gradient(circle at 1px 1px, oklch(0.7 0.1 280) 1px, transparent 0)`,
           backgroundSize: '24px 24px'
         }}
       />
