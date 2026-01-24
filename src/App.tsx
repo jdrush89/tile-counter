@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, BowlFood, CalendarBlank, CaretLeft, CaretRight, X } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, BowlFood, CalendarBlank, CaretLeft, CaretRight, X, NotePencil } from '@phosphor-icons/react'
+import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
 
@@ -13,6 +14,7 @@ interface TallyEvent {
   tallyId: string
   timestamp: number
   change: number
+  note?: string
 }
 
 interface Tally {
@@ -1636,13 +1638,17 @@ function TallyTile({
 function CalendarView({ 
   events, 
   tallies, 
-  onClose 
+  onClose,
+  onUpdateEventNote
 }: { 
   events: TallyEvent[]
   tallies: Tally[]
-  onClose: () => void 
+  onClose: () => void
+  onUpdateEventNote: (timestamp: number, note: string) => void
 }) {
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [selectedEvent, setSelectedEvent] = useState<TallyEvent | null>(null)
+  const [editingNote, setEditingNote] = useState('')
   
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -1679,6 +1685,25 @@ function CalendarView({
   const today = new Date()
   const isToday = (day: number) => 
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+
+  const handleEventClick = (event: TallyEvent) => {
+    setSelectedEvent(event)
+    setEditingNote(event.note || '')
+  }
+
+  const handleSaveNote = () => {
+    if (selectedEvent) {
+      onUpdateEventNote(selectedEvent.timestamp, editingNote)
+      setSelectedEvent(null)
+      setEditingNote('')
+      toast.success('Note updated')
+    }
+  }
+
+  const formatEventTime = (timestamp: number) => {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
   
   const cells: React.ReactNode[] = []
   for (let i = 0; i < startingDay; i++) {
@@ -1689,11 +1714,12 @@ function CalendarView({
     const dayEvents = getEventsForDay(day)
     const eventsByTally = dayEvents.reduce((acc, event) => {
       if (!acc[event.tallyId]) {
-        acc[event.tallyId] = { count: 0, tally: getTallyById(event.tallyId) }
+        acc[event.tallyId] = { count: 0, tally: getTallyById(event.tallyId), events: [] }
       }
       acc[event.tallyId].count += event.change
+      acc[event.tallyId].events.push(event)
       return acc
-    }, {} as Record<string, { count: number; tally: Tally | undefined }>)
+    }, {} as Record<string, { count: number; tally: Tally | undefined; events: TallyEvent[] }>)
     
     cells.push(
       <div 
@@ -1706,19 +1732,29 @@ function CalendarView({
           {day}
         </div>
         <div className="space-y-0.5 overflow-y-auto max-h-12 md:max-h-16">
-          {Object.entries(eventsByTally).map(([tallyId, { count, tally }]) => (
+          {Object.entries(eventsByTally).map(([tallyId, { count, tally, events: tallyEvents }]) => (
             tally && (
-              <div 
+              <button 
                 key={tallyId}
-                className="flex items-center gap-1 text-[10px] md:text-xs"
+                onClick={() => {
+                  if (tallyEvents.length === 1) {
+                    handleEventClick(tallyEvents[0])
+                  } else if (tallyEvents.length > 1) {
+                    handleEventClick(tallyEvents[0])
+                  }
+                }}
+                className="flex items-center gap-1 text-[10px] md:text-xs w-full hover:bg-primary/10 rounded px-0.5 transition-colors cursor-pointer"
               >
                 <div 
                   className="w-2 h-2 rounded-full shrink-0"
                   style={{ backgroundColor: tally.color }}
                 />
                 <span className="truncate text-foreground/80">{tally.title}</span>
-                <span className="font-medium text-foreground ml-auto">+{count}</span>
-              </div>
+                <span className="font-medium text-foreground ml-auto flex items-center gap-0.5">
+                  +{count}
+                  {tallyEvents.some(e => e.note) && <NotePencil size={10} className="text-primary" />}
+                </span>
+              </button>
             )
           ))}
         </div>
@@ -1784,7 +1820,69 @@ function CalendarView({
             ))}
           </div>
         </div>
+
+        <div className="mt-4 text-xs text-muted-foreground text-center">
+          Click on a tally entry to view or edit its note
+        </div>
       </div>
+
+      <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <NotePencil size={20} className="text-primary" weight="bold" />
+              Event Details
+            </DialogTitle>
+            <DialogDescription>
+              View or edit the note for this entry.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                <div 
+                  className="w-4 h-4 rounded-full shrink-0"
+                  style={{ backgroundColor: getTallyById(selectedEvent.tallyId)?.color }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-foreground truncate">
+                    {getTallyById(selectedEvent.tallyId)?.title || 'Unknown'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(selectedEvent.timestamp).toLocaleDateString()} at {formatEventTime(selectedEvent.timestamp)}
+                  </div>
+                </div>
+                <div className="text-lg font-bold text-primary">
+                  {selectedEvent.change > 0 ? '+' : ''}{selectedEvent.change}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="event-note" className="text-sm font-medium">Note</label>
+                <Textarea
+                  id="event-note"
+                  placeholder="Add a note for this entry..."
+                  value={editingNote}
+                  onChange={(e) => setEditingNote(e.target.value)}
+                  className="min-h-[100px] resize-none"
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedEvent(null)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveNote}>
+                  Save Note
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </motion.div>
   )
 }
@@ -1809,6 +1907,10 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [forcePeekAll, setForcePeekAll] = useState(false)
   const [forceFeedingAll, setForceFeedingAll] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [customAmountDialogOpen, setCustomAmountDialogOpen] = useState(false)
+  const [customAmountTallyId, setCustomAmountTallyId] = useState<string | null>(null)
+  const [customAmount, setCustomAmount] = useState('1')
+  const [customNote, setCustomNote] = useState('')
 
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
@@ -1996,6 +2098,48 @@ function TallyApp({ user }: { user: UserInfo }) {
     setIsEditingName(false)
   }
 
+  const openCustomAmountDialog = (tallyId: string) => {
+    setCustomAmountTallyId(tallyId)
+    setCustomAmount('1')
+    setCustomNote('')
+    setCustomAmountDialogOpen(true)
+  }
+
+  const handleAddCustomAmount = () => {
+    if (!customAmountTallyId) return
+    const amount = Math.max(1, parseInt(customAmount) || 1)
+    
+    setTallies((current) =>
+      (current ?? []).map((t) => (t.id === customAmountTallyId ? { ...t, count: t.count + amount } : t))
+    )
+    
+    setTallyEvents((current) => [
+      ...(current ?? []),
+      { tallyId: customAmountTallyId, timestamp: Date.now(), change: amount, note: customNote.trim() || undefined }
+    ])
+    
+    const currentTally = currentTallies.find(t => t.id === customAmountTallyId)
+    const newCount = currentTally ? currentTally.count + amount : amount
+    
+    setAnimatingId(customAmountTallyId)
+    setAnimatingCount(newCount)
+    
+    const maxAnimals = Math.min(newCount, 20)
+    const lastAnimalStaggerDelay = (maxAnimals - 1) * 120
+    const animationDuration = 1200
+    const totalAnimationTime = lastAnimalStaggerDelay + animationDuration + 100
+    
+    setTimeout(() => {
+      setAnimatingId(null)
+      setAnimatingCount(0)
+    }, totalAnimationTime)
+    
+    setCustomAmountDialogOpen(false)
+    setCustomAmountTallyId(null)
+    setEditingId(null)
+    toast.success(`Added ${amount} to tally${customNote.trim() ? ' with note' : ''}`)
+  }
+
   const handleCallAnimals = () => {
     if (currentTallies.length === 0) return
     setForceFeedingAll(false)
@@ -2018,6 +2162,16 @@ function TallyApp({ user }: { user: UserInfo }) {
     setEditingId(null)
     setIsEditingName(false)
     setEditingTitle('')
+  }
+
+  const updateEventNote = (timestamp: number, note: string) => {
+    setTallyEvents((current) =>
+      (current ?? []).map((e) => 
+        e.timestamp === timestamp 
+          ? { ...e, note: note.trim() || undefined } 
+          : e
+      )
+    )
   }
 
   return (
@@ -2243,6 +2397,15 @@ function TallyApp({ user }: { user: UserInfo }) {
                               <Minus size={14} weight="bold" />
                             </Button>
                             <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openCustomAmountDialog(tally.id)}
+                              className="h-8 w-8 md:h-9 md:w-9"
+                              title="Add with note"
+                            >
+                              <NotePencil size={14} weight="bold" />
+                            </Button>
+                            <Button
                               variant="destructive"
                               size="icon"
                               onClick={() => deleteTally(tally.id)}
@@ -2357,6 +2520,65 @@ function TallyApp({ user }: { user: UserInfo }) {
         </footer>
       </div>
 
+      <Dialog open={customAmountDialogOpen} onOpenChange={setCustomAmountDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <NotePencil size={20} className="text-primary" weight="bold" />
+              Add with Note
+            </DialogTitle>
+            <DialogDescription>
+              Add a custom amount with an optional note.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleAddCustomAmount()
+            }}
+            className="space-y-4 pt-4"
+          >
+            <div className="space-y-2">
+              <label htmlFor="custom-amount" className="text-sm font-medium">Amount</label>
+              <Input
+                id="custom-amount"
+                type="number"
+                min="1"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="text-lg"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="custom-note" className="text-sm font-medium">Note (optional)</label>
+              <Textarea
+                id="custom-note"
+                placeholder="e.g. Watched Inception with friends..."
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                className="min-h-[80px] resize-none"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCustomAmountDialogOpen(false)
+                  setCustomAmountTallyId(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!customAmount || parseInt(customAmount) < 1}>
+                Add
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -2413,7 +2635,8 @@ function TallyApp({ user }: { user: UserInfo }) {
           <CalendarView 
             events={currentEvents} 
             tallies={currentTallies} 
-            onClose={() => setShowCalendar(false)} 
+            onClose={() => setShowCalendar(false)}
+            onUpdateEventNote={updateEventNote}
           />
         )}
       </AnimatePresence>
