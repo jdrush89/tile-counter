@@ -1647,8 +1647,6 @@ function CalendarView({
   onUpdateEventNote: (timestamp: number, note: string) => void
 }) {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedEvent, setSelectedEvent] = useState<TallyEvent | null>(null)
-  const [editingNote, setEditingNote] = useState('')
   
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -1686,18 +1684,28 @@ function CalendarView({
   const isToday = (day: number) => 
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
-  const handleEventClick = (event: TallyEvent) => {
-    setSelectedEvent(event)
-    setEditingNote(event.note || '')
+  const [selectedDayEvents, setSelectedDayEvents] = useState<TallyEvent[]>([])
+  const [editingNotes, setEditingNotes] = useState<Record<number, string>>({})
+
+  const handleEventsClick = (events: TallyEvent[]) => {
+    setSelectedDayEvents(events)
+    const notesMap: Record<number, string> = {}
+    events.forEach(e => {
+      notesMap[e.timestamp] = e.note || ''
+    })
+    setEditingNotes(notesMap)
   }
 
-  const handleSaveNote = () => {
-    if (selectedEvent) {
-      onUpdateEventNote(selectedEvent.timestamp, editingNote)
-      setSelectedEvent(null)
-      setEditingNote('')
-      toast.success('Note updated')
-    }
+  const handleSaveNotes = () => {
+    selectedDayEvents.forEach(event => {
+      const newNote = editingNotes[event.timestamp] || ''
+      if (newNote !== (event.note || '')) {
+        onUpdateEventNote(event.timestamp, newNote)
+      }
+    })
+    setSelectedDayEvents([])
+    setEditingNotes({})
+    toast.success('Notes updated')
   }
 
   const formatEventTime = (timestamp: number) => {
@@ -1736,13 +1744,7 @@ function CalendarView({
             tally && (
               <button 
                 key={tallyId}
-                onClick={() => {
-                  if (tallyEvents.length === 1) {
-                    handleEventClick(tallyEvents[0])
-                  } else if (tallyEvents.length > 1) {
-                    handleEventClick(tallyEvents[0])
-                  }
-                }}
+                onClick={() => handleEventsClick(tallyEvents)}
                 className="flex items-center gap-1 text-[10px] md:text-xs w-full hover:bg-primary/10 rounded px-0.5 transition-colors cursor-pointer"
               >
                 <div 
@@ -1826,57 +1828,71 @@ function CalendarView({
         </div>
       </div>
 
-      <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={selectedDayEvents.length > 0} onOpenChange={(open) => !open && setSelectedDayEvents([])}>
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <NotePencil size={20} className="text-primary" weight="bold" />
               Event Details
             </DialogTitle>
             <DialogDescription>
-              View or edit the note for this entry.
+              View or edit notes for these entries.
             </DialogDescription>
           </DialogHeader>
-          {selectedEvent && (
-            <div className="space-y-4 pt-2">
+          {selectedDayEvents.length > 0 && (
+            <div className="space-y-4 pt-2 overflow-y-auto flex-1">
               <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
                 <div 
                   className="w-4 h-4 rounded-full shrink-0"
-                  style={{ backgroundColor: getTallyById(selectedEvent.tallyId)?.color }}
+                  style={{ backgroundColor: getTallyById(selectedDayEvents[0].tallyId)?.color }}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-foreground truncate">
-                    {getTallyById(selectedEvent.tallyId)?.title || 'Unknown'}
+                    {getTallyById(selectedDayEvents[0].tallyId)?.title || 'Unknown'}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(selectedEvent.timestamp).toLocaleDateString()} at {formatEventTime(selectedEvent.timestamp)}
+                    {new Date(selectedDayEvents[0].timestamp).toLocaleDateString()} • {selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'entry' : 'entries'}
                   </div>
                 </div>
                 <div className="text-lg font-bold text-primary">
-                  {selectedEvent.change > 0 ? '+' : ''}{selectedEvent.change}
+                  +{selectedDayEvents.reduce((sum, e) => sum + e.change, 0)}
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <label htmlFor="event-note" className="text-sm font-medium">Note</label>
-                <Textarea
-                  id="event-note"
-                  placeholder="Add a note for this entry..."
-                  value={editingNote}
-                  onChange={(e) => setEditingNote(e.target.value)}
-                  className="min-h-[100px] resize-none"
-                />
+              <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
+                {selectedDayEvents.map((event, index) => (
+                  <div key={event.timestamp} className="space-y-2 p-3 bg-card/50 rounded-lg border border-border/50">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {formatEventTime(event.timestamp)}
+                      </span>
+                      <span className="font-medium text-primary">
+                        {event.change > 0 ? '+' : ''}{event.change}
+                      </span>
+                    </div>
+                    <Textarea
+                      id={`event-note-${index}`}
+                      placeholder="Add a note for this entry..."
+                      value={editingNotes[event.timestamp] || ''}
+                      onChange={(e) => setEditingNotes(prev => ({
+                        ...prev,
+                        [event.timestamp]: e.target.value
+                      }))}
+                      className="min-h-[60px] resize-none text-sm"
+                    />
+                  </div>
+                ))}
               </div>
               
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
                 <Button
                   variant="outline"
-                  onClick={() => setSelectedEvent(null)}
+                  onClick={() => setSelectedDayEvents([])}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSaveNote}>
-                  Save Note
+                <Button onClick={handleSaveNotes}>
+                  Save Notes
                 </Button>
               </div>
             </div>
