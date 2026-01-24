@@ -1,13 +1,19 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, BowlFood } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, BowlFood, CalendarBlank, CaretLeft, CaretRight, X } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
+
+interface TallyEvent {
+  tallyId: string
+  timestamp: number
+  change: number
+}
 
 interface Tally {
   id: string
@@ -1627,9 +1633,166 @@ function TallyTile({
   )
 }
 
+function CalendarView({ 
+  events, 
+  tallies, 
+  onClose 
+}: { 
+  events: TallyEvent[]
+  tallies: Tally[]
+  onClose: () => void 
+}) {
+  const [currentDate, setCurrentDate] = useState(new Date())
+  
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+  
+  const firstDayOfMonth = new Date(year, month, 1)
+  const lastDayOfMonth = new Date(year, month + 1, 0)
+  const daysInMonth = lastDayOfMonth.getDate()
+  const startingDay = firstDayOfMonth.getDay()
+  
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December']
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  
+  const getEventsForDay = (day: number) => {
+    const dayStart = new Date(year, month, day).getTime()
+    const dayEnd = new Date(year, month, day + 1).getTime()
+    return events.filter(e => e.timestamp >= dayStart && e.timestamp < dayEnd)
+  }
+  
+  const getTallyById = (id: string) => tallies.find(t => t.id === id)
+  
+  const goToPrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1))
+  }
+  
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1))
+  }
+  
+  const goToToday = () => {
+    setCurrentDate(new Date())
+  }
+  
+  const today = new Date()
+  const isToday = (day: number) => 
+    day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+  
+  const cells: React.ReactNode[] = []
+  for (let i = 0; i < startingDay; i++) {
+    cells.push(<div key={`empty-${i}`} className="h-20 md:h-24" />)
+  }
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayEvents = getEventsForDay(day)
+    const eventsByTally = dayEvents.reduce((acc, event) => {
+      if (!acc[event.tallyId]) {
+        acc[event.tallyId] = { count: 0, tally: getTallyById(event.tallyId) }
+      }
+      acc[event.tallyId].count += event.change
+      return acc
+    }, {} as Record<string, { count: number; tally: Tally | undefined }>)
+    
+    cells.push(
+      <div 
+        key={day}
+        className={`h-20 md:h-24 border border-border/50 rounded-lg p-1.5 md:p-2 transition-colors ${
+          isToday(day) ? 'bg-primary/10 border-primary/50' : 'bg-card/50 hover:bg-card'
+        }`}
+      >
+        <div className={`text-xs md:text-sm font-medium mb-1 ${isToday(day) ? 'text-primary' : 'text-muted-foreground'}`}>
+          {day}
+        </div>
+        <div className="space-y-0.5 overflow-y-auto max-h-12 md:max-h-16">
+          {Object.entries(eventsByTally).map(([tallyId, { count, tally }]) => (
+            tally && (
+              <div 
+                key={tallyId}
+                className="flex items-center gap-1 text-[10px] md:text-xs"
+              >
+                <div 
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: tally.color }}
+                />
+                <span className="truncate text-foreground/80">{tally.title}</span>
+                <span className="font-medium text-foreground ml-auto">+{count}</span>
+              </div>
+            )
+          ))}
+        </div>
+      </div>
+    )
+  }
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 overflow-y-auto"
+    >
+      <div className="max-w-4xl mx-auto p-4 md:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Tally History</h2>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X size={24} weight="bold" />
+          </Button>
+        </div>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={goToPrevMonth}>
+              <CaretLeft size={20} weight="bold" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={goToNextMonth}>
+              <CaretRight size={20} weight="bold" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={goToToday}>
+              Today
+            </Button>
+          </div>
+          <h3 className="text-lg md:text-xl font-semibold text-foreground">
+            {monthNames[month]} {year}
+          </h3>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2">
+          {dayNames.map(day => (
+            <div key={day} className="text-center text-xs md:text-sm font-medium text-muted-foreground py-2">
+              {day}
+            </div>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 md:gap-2">
+          {cells}
+        </div>
+        
+        <div className="mt-6 p-4 bg-card rounded-xl border border-border">
+          <h4 className="font-semibold text-foreground mb-3">Legend</h4>
+          <div className="flex flex-wrap gap-3">
+            {tallies.map(tally => (
+              <div key={tally.id} className="flex items-center gap-2 text-sm">
+                <div 
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: tally.color }}
+                />
+                <span className="text-foreground/80">{tally.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 function TallyApp({ user }: { user: UserInfo }) {
   const [tallies, setTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
   const [purchasedAnimals, setPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
+  const [tallyEvents, setTallyEvents] = useKV<TallyEvent[]>(`tally-events-${user.id}`, [])
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -1645,9 +1808,11 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [purchaseTallyId, setPurchaseTallyId] = useState<string | null>(null)
   const [forcePeekAll, setForcePeekAll] = useState(false)
   const [forceFeedingAll, setForceFeedingAll] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
 
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
+  const currentEvents = tallyEvents ?? []
   const [showNewButton, setShowNewButton] = useState(false)
   
   const totalTallies = useMemo(() => 
@@ -1741,6 +1906,12 @@ function TallyApp({ user }: { user: UserInfo }) {
     setTallies((current) =>
       (current ?? []).map((t) => (t.id === id ? { ...t, count: t.count + 1 } : t))
     )
+    
+    setTallyEvents((current) => [
+      ...(current ?? []),
+      { tallyId: id, timestamp: Date.now(), change: 1 }
+    ])
+    
     setAnimatingId(id)
     setAnimatingCount(newCount)
     
@@ -1756,9 +1927,16 @@ function TallyApp({ user }: { user: UserInfo }) {
   }
 
   const decrementTally = (id: string) => {
-    setTallies((current) =>
-      (current ?? []).map((t) => (t.id === id ? { ...t, count: Math.max(0, t.count - 1) } : t))
-    )
+    const currentTally = currentTallies.find(t => t.id === id)
+    if (currentTally && currentTally.count > 0) {
+      setTallies((current) =>
+        (current ?? []).map((t) => (t.id === id ? { ...t, count: Math.max(0, t.count - 1) } : t))
+      )
+      setTallyEvents((current) => [
+        ...(current ?? []),
+        { tallyId: id, timestamp: Date.now(), change: -1 }
+      ])
+    }
   }
 
   const updateTallyTitle = (id: string, newTitleValue: string) => {
@@ -1887,6 +2065,15 @@ function TallyApp({ user }: { user: UserInfo }) {
             >
               <BowlFood size={16} weight="bold" />
               Feed
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCalendar(true)}
+              className="gap-2"
+            >
+              <CalendarBlank size={16} weight="bold" />
+              History
             </Button>
           </div>
           
@@ -2220,6 +2407,16 @@ function TallyApp({ user }: { user: UserInfo }) {
           )}
         </DialogContent>
       </Dialog>
+
+      <AnimatePresence>
+        {showCalendar && (
+          <CalendarView 
+            events={currentEvents} 
+            tallies={currentTallies} 
+            onClose={() => setShowCalendar(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
