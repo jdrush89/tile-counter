@@ -1901,6 +1901,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
   const [isLoaded, setIsLoaded] = useState(false)
+  const gridRef = useRef<HTMLDivElement>(null)
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false)
   const [animalToPurchase, setAnimalToPurchase] = useState<{ id: number; name: string; price: number } | null>(null)
   const [purchaseTallyId, setPurchaseTallyId] = useState<string | null>(null)
@@ -1951,6 +1952,19 @@ function TallyApp({ user }: { user: UserInfo }) {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (!editingId) return
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (gridRef.current && !gridRef.current.contains(e.target as Node)) {
+        closeEditMode()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [editingId])
 
   if (!isLoaded) {
     return (
@@ -2264,7 +2278,7 @@ function TallyApp({ user }: { user: UserInfo }) {
           )}
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div ref={gridRef} className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <AnimatePresence mode="popLayout">
             {currentTallies.map((tally) => (
               <motion.div
