@@ -1973,7 +1973,10 @@ function TallyApp({ user }: { user: UserInfo }) {
     if (!editingId) return
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (gridRef.current && !gridRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (gridRef.current && !gridRef.current.contains(target)) {
+        const radixPortal = (target as Element).closest?.('[data-radix-popper-content-wrapper]')
+        if (radixPortal) return
         closeEditMode()
       }
     }
