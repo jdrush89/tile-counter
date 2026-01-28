@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, BowlFood, CalendarBlank, CaretLeft, CaretRight, X, NotePencil } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
@@ -2259,8 +2259,8 @@ function TallyApp({ user }: { user: UserInfo }) {
               disabled={forceFeedingAll || currentTallies.length === 0}
               className="gap-2"
             >
-              <BowlFood size={16} weight="bold" />
-              Feed
+              <PersonSimpleTaiChi size={16} weight="bold" />
+              Dance
             </Button>
             <Button
               variant="outline"
