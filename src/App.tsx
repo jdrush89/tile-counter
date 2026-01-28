@@ -2095,10 +2095,19 @@ function TallyApp({ user }: { user: UserInfo }) {
     const animal = ALL_ANIMALS.find(a => a.id === animalId)
     if (!animal) return
     
-    if ('price' in animal && !currentPurchased.includes(animalId)) {
+    const isPremium = 'price' in animal
+    
+    if (isPremium && !currentPurchased.includes(animalId)) {
       setAnimalToPurchase(animal as { id: number; name: string; price: number })
       setPurchaseTallyId(tallyId)
       setPurchaseDialogOpen(true)
+      return
+    }
+    
+    if (!isPremium && animal.unlockAt > totalTallies) {
+      toast.error(`${animal.name} is locked`, {
+        description: `Reach ${animal.unlockAt} total tallies to unlock.`,
+      })
       return
     }
     
