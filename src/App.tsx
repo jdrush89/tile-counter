@@ -2316,12 +2316,13 @@ function TallyApp({ user }: { user: UserInfo }) {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className={editingId === tally.id ? 'col-span-2 row-span-2' : ''}
               >
                 {editingId === tally.id ? (
                   <Card className="aspect-square border-2 border-primary/50 bg-card overflow-hidden">
-                    <CardContent className="h-full overflow-y-auto p-3 md:p-4">
-                      <div className="flex flex-col items-center gap-2 md:gap-3 min-h-full justify-between">
-                        <div className="flex flex-col items-center gap-1.5 md:gap-2 w-full">
+                    <CardContent className="h-full overflow-y-auto p-4 md:p-6">
+                      <div className="flex flex-col items-center gap-4 md:gap-5 min-h-full justify-between">
+                        <div className="flex flex-col items-center gap-3 md:gap-4 w-full">
                           <Input
                             id={`count-input-${tally.id}`}
                             type="number"
@@ -2333,7 +2334,7 @@ function TallyApp({ user }: { user: UserInfo }) {
                                 (current ?? []).map((t) => (t.id === tally.id ? { ...t, count: newCount } : t))
                               )
                             }}
-                            className="w-20 h-9 text-2xl md:text-3xl font-bold text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-28 h-12 text-4xl md:text-5xl font-bold text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                           
                           {isEditingName ? (
@@ -2342,125 +2343,123 @@ function TallyApp({ user }: { user: UserInfo }) {
                                 e.preventDefault()
                                 updateTallyTitle(tally.id, editingTitle)
                               }}
-                              className="flex gap-1 w-full"
+                              className="flex gap-2 w-full max-w-xs"
                             >
                               <Input
                                 id="edit-title"
                                 value={editingTitle}
                                 onChange={(e) => setEditingTitle(e.target.value)}
-                                className="h-7 text-xs"
+                                className="h-9 text-sm"
                                 autoFocus
                               />
                               <Button
                                 type="submit"
                                 size="icon"
-                                className="h-7 w-7 shrink-0"
+                                className="h-9 w-9 shrink-0"
                               >
-                                <Check size={12} weight="bold" />
+                                <Check size={16} weight="bold" />
                               </Button>
                             </form>
                           ) : (
                             <button
                               onClick={() => setIsEditingName(true)}
-                              className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
+                              className="flex items-center gap-2 text-base font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
                             >
                               <span className="line-clamp-2 break-words">{tally.title}</span>
-                              <PencilSimple size={12} className="shrink-0" />
+                              <PencilSimple size={16} className="shrink-0" />
                             </button>
                           )}
                         </div>
 
-                        <div className="flex flex-col gap-2 md:gap-3 w-full">
-                          <div className="flex justify-center gap-1 md:gap-1.5 flex-wrap">
+                        <div className="flex flex-col gap-4 md:gap-5 w-full items-center">
+                          <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
                             {COLORS.map((color) => (
                               <button
                                 key={color}
                                 onClick={() => updateTallyColor(tally.id, color)}
-                                className={`w-5 h-5 md:w-6 md:h-6 rounded-full transition-all ${tally.color === color ? 'ring-2 ring-offset-1 md:ring-offset-2 ring-primary scale-110' : 'hover:scale-105'}`}
+                                className={`w-8 h-8 md:w-10 md:h-10 rounded-full transition-all ${tally.color === color ? 'ring-2 ring-offset-2 md:ring-offset-3 ring-primary scale-110' : 'hover:scale-105'}`}
                                 style={{ backgroundColor: color }}
                               />
                             ))}
                           </div>
 
-                          <div className="flex justify-center">
-                            <Select
-                              value={String(tally.animalType ?? 0)}
-                              onValueChange={(value) => handleAnimalSelect(tally.id, Number(value))}
-                            >
-                              <SelectTrigger className="w-full max-w-[140px] md:max-w-[160px] h-7 md:h-8 text-xs">
-                                <SelectValue placeholder="Select animal" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ALL_ANIMALS.map((animal) => {
-                                  const isPremium = 'price' in animal
-                                  const isUnlocked = isPremium 
-                                    ? currentPurchased.includes(animal.id)
-                                    : animal.unlockAt <= totalTallies
-                                  return (
-                                    <SelectItem
-                                      key={animal.id}
-                                      value={String(animal.id)}
-                                      className="text-xs"
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        {isUnlocked ? (
-                                          <span className="flex items-center gap-1.5">
-                                            {isPremium && <Crown size={12} className="text-amber-500" weight="fill" />}
-                                            {animal.name}
-                                          </span>
-                                        ) : isPremium ? (
-                                          <span className="flex items-center gap-1.5 text-amber-600">
-                                            <CurrencyDollar size={12} weight="bold" />
-                                            {animal.name} (${(animal as { price: number }).price})
-                                          </span>
-                                        ) : (
-                                          <span className="flex items-center gap-1.5 text-muted-foreground">
-                                            <Lock size={12} />
-                                            {animal.name} ({animal.unlockAt})
-                                          </span>
-                                        )}
-                                      </span>
-                                    </SelectItem>
-                                  )
-                                })}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          <Select
+                            value={String(tally.animalType ?? 0)}
+                            onValueChange={(value) => handleAnimalSelect(tally.id, Number(value))}
+                          >
+                            <SelectTrigger className="w-full max-w-[200px] md:max-w-[240px] h-10 text-sm">
+                              <SelectValue placeholder="Select animal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ALL_ANIMALS.map((animal) => {
+                                const isPremium = 'price' in animal
+                                const isUnlocked = isPremium 
+                                  ? currentPurchased.includes(animal.id)
+                                  : animal.unlockAt <= totalTallies
+                                return (
+                                  <SelectItem
+                                    key={animal.id}
+                                    value={String(animal.id)}
+                                    className="text-sm"
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      {isUnlocked ? (
+                                        <span className="flex items-center gap-1.5">
+                                          {isPremium && <Crown size={14} className="text-amber-500" weight="fill" />}
+                                          {animal.name}
+                                        </span>
+                                      ) : isPremium ? (
+                                        <span className="flex items-center gap-1.5 text-amber-600">
+                                          <CurrencyDollar size={14} weight="bold" />
+                                          {animal.name} (${(animal as { price: number }).price})
+                                        </span>
+                                      ) : (
+                                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                                          <Lock size={14} />
+                                          {animal.name} ({animal.unlockAt})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                            </SelectContent>
+                          </Select>
                         </div>
                         
-                        <div className="flex flex-col items-center gap-1.5 md:gap-2 w-full">
-                          <div className="flex gap-2">
+                        <div className="flex flex-col items-center gap-3 md:gap-4 w-full">
+                          <div className="flex gap-3">
                             <Button
                               variant="outline"
                               size="icon"
                               onClick={() => decrementTally(tally.id)}
-                              className="h-8 w-8 md:h-9 md:w-9"
+                              className="h-10 w-10 md:h-12 md:w-12"
                             >
-                              <Minus size={14} weight="bold" />
+                              <Minus size={18} weight="bold" />
                             </Button>
                             <Button
                               variant="outline"
                               size="icon"
                               onClick={() => openCustomAmountDialog(tally.id)}
-                              className="h-8 w-8 md:h-9 md:w-9"
+                              className="h-10 w-10 md:h-12 md:w-12"
                               title="Add with note"
                             >
-                              <NotePencil size={14} weight="bold" />
+                              <NotePencil size={18} weight="bold" />
                             </Button>
                             <Button
                               variant="destructive"
                               size="icon"
                               onClick={() => deleteTally(tally.id)}
-                              className="h-8 w-8 md:h-9 md:w-9"
+                              className="h-10 w-10 md:h-12 md:w-12"
                             >
-                              <Trash size={14} weight="bold" />
+                              <Trash size={18} weight="bold" />
                             </Button>
                           </div>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="default"
                             onClick={closeEditMode}
-                            className="text-xs h-6 md:h-7"
+                            className="text-sm"
                           >
                             Done
                           </Button>
