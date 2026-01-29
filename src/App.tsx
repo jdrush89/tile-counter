@@ -9,6 +9,7 @@ import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, M
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface TallyEvent {
   tallyId: string
@@ -1928,6 +1929,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [customAmountTallyId, setCustomAmountTallyId] = useState<string | null>(null)
   const [customAmount, setCustomAmount] = useState('1')
   const [customNote, setCustomNote] = useState('')
+  const isMobile = useIsMobile()
 
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
@@ -2316,7 +2318,7 @@ function TallyApp({ user }: { user: UserInfo }) {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                className={editingId === tally.id ? 'col-span-2 row-span-2' : ''}
+                className={editingId === tally.id && isMobile ? 'col-span-2 row-span-2' : ''}
               >
                 {editingId === tally.id ? (
                   <Card className="aspect-square border-2 border-primary/50 bg-card overflow-hidden">
