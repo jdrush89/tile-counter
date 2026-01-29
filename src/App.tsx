@@ -18,6 +18,12 @@ interface TallyEvent {
   note?: string
 }
 
+interface DailyTallyNote {
+  date: string
+  tallyId: string
+  note: string
+}
+
 interface Tally {
   id: string
   title: string
@@ -1650,13 +1656,17 @@ function TallyTile({
 function CalendarView({ 
   events, 
   tallies, 
+  dailyNotes,
   onClose,
-  onUpdateEventNote
+  onUpdateEventNote,
+  onUpdateDailyNote
 }: { 
   events: TallyEvent[]
   tallies: Tally[]
+  dailyNotes: DailyTallyNote[]
   onClose: () => void
   onUpdateEventNote: (timestamp: number, note: string) => void
+  onUpdateDailyNote: (date: string, tallyId: string, note: string) => void
 }) {
   const [currentDate, setCurrentDate] = useState(new Date())
   
@@ -1699,7 +1709,15 @@ function CalendarView({
   const [selectedDayEvents, setSelectedDayEvents] = useState<TallyEvent[]>([])
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [editingNotes, setEditingNotes] = useState<Record<number, string>>({})
+  const [editingDailyNotes, setEditingDailyNotes] = useState<Record<string, string>>({})
   const [collapsedTallies, setCollapsedTallies] = useState<Record<string, boolean>>({})
+
+  const getDateKey = (day: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+  const getDailyNoteForTally = (day: number, tallyId: string) => {
+    const dateKey = getDateKey(day)
+    return dailyNotes.find(n => n.date === dateKey && n.tallyId === tallyId)?.note || ''
+  }
 
   const getEventsByTallyForDay = (dayEvents: TallyEvent[]) => {
     return dayEvents.reduce((acc, event) => {
@@ -1721,6 +1739,13 @@ function CalendarView({
       notesMap[e.timestamp] = e.note || ''
     })
     setEditingNotes(notesMap)
+    
+    const dailyNotesMap: Record<string, string> = {}
+    const tallyIds = [...new Set(dayEvents.map(e => e.tallyId))]
+    tallyIds.forEach(tallyId => {
+      dailyNotesMap[tallyId] = getDailyNoteForTally(day, tallyId)
+    })
+    setEditingDailyNotes(dailyNotesMap)
     setCollapsedTallies({})
   }
 
@@ -1747,15 +1772,27 @@ function CalendarView({
     Object.keys(getEventsByTallyForDay(selectedDayEvents)).every(tallyId => collapsedTallies[tallyId])
 
   const handleSaveNotes = () => {
+    if (selectedDay === null) return
+    
     selectedDayEvents.forEach(event => {
       const newNote = editingNotes[event.timestamp] || ''
       if (newNote !== (event.note || '')) {
         onUpdateEventNote(event.timestamp, newNote)
       }
     })
+    
+    const dateKey = getDateKey(selectedDay)
+    Object.entries(editingDailyNotes).forEach(([tallyId, note]) => {
+      const existingNote = getDailyNoteForTally(selectedDay, tallyId)
+      if (note !== existingNote) {
+        onUpdateDailyNote(dateKey, tallyId, note)
+      }
+    })
+    
     setSelectedDayEvents([])
     setSelectedDay(null)
     setEditingNotes({})
+    setEditingDailyNotes({})
     toast.success('Notes updated')
   }
 
@@ -1787,8 +1824,9 @@ function CalendarView({
           {day}
         </div>
         <div className="space-y-0.5 overflow-y-auto max-h-12 md:max-h-16">
-          {Object.entries(eventsByTally).map(([tallyId, { count, tally, events: tallyEvents }]) => (
-            tally && (
+          {Object.entries(eventsByTally).map(([tallyId, { count, tally, events: tallyEvents }]) => {
+            const hasDailyNote = getDailyNoteForTally(day, tallyId)
+            return tally && (
               <div 
                 key={tallyId}
                 className="flex items-center gap-1 text-[10px] md:text-xs w-full px-0.5"
@@ -1800,11 +1838,11 @@ function CalendarView({
                 <span className="truncate text-foreground/80">{tally.title}</span>
                 <span className="font-medium text-foreground ml-auto flex items-center gap-0.5">
                   +{count}
-                  {tallyEvents.some(e => e.note) && <NotePencil size={10} className="text-primary" />}
+                  {(tallyEvents.some(e => e.note) || hasDailyNote) && <NotePencil size={10} className="text-primary" />}
                 </span>
               </div>
             )
-          ))}
+          })}
         </div>
       </button>
     )
@@ -1952,7 +1990,30 @@ function CalendarView({
                           transition={{ duration: 0.2 }}
                           className="overflow-hidden"
                         >
-                          <div className="space-y-2 pl-2">
+                          <div className="space-y-3 pl-2">
+                            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                              <label 
+                                htmlFor={`daily-note-${tallyId}`}
+                                className="text-xs font-medium text-primary mb-2 block"
+                              >
+                                Daily Summary Note
+                              </label>
+                              <Textarea
+                                id={`daily-note-${tallyId}`}
+                                placeholder={`Overall note for ${tally.title} on this day...`}
+                                value={editingDailyNotes[tallyId] || ''}
+                                onChange={(e) => setEditingDailyNotes(prev => ({
+                                  ...prev,
+                                  [tallyId]: e.target.value
+                                }))}
+                                className="min-h-[60px] resize-none text-sm bg-background"
+                              />
+                            </div>
+                            
+                            <div className="text-xs text-muted-foreground font-medium px-1">
+                              Individual Entries
+                            </div>
+                            
                             {tallyEvents.map((event, index) => (
                               <div key={event.timestamp} className="space-y-2 p-3 bg-card/50 rounded-lg border border-border/50">
                                 <div className="flex items-center justify-between text-sm">
@@ -2131,6 +2192,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [tallies, setTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
   const [purchasedAnimals, setPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
   const [tallyEvents, setTallyEvents] = useKV<TallyEvent[]>(`tally-events-${user.id}`, [])
+  const [dailyTallyNotes, setDailyTallyNotes] = useKV<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -2158,6 +2220,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
   const currentEvents = tallyEvents ?? []
+  const currentDailyNotes = dailyTallyNotes ?? []
   const [showNewButton, setShowNewButton] = useState(false)
   
   const totalTallies = useMemo(() => 
@@ -2458,6 +2521,25 @@ function TallyApp({ user }: { user: UserInfo }) {
           : e
       )
     )
+  }
+
+  const updateDailyNote = (date: string, tallyId: string, note: string) => {
+    setDailyTallyNotes((current) => {
+      const existing = (current ?? []).find(n => n.date === date && n.tallyId === tallyId)
+      if (existing) {
+        if (!note.trim()) {
+          return (current ?? []).filter(n => !(n.date === date && n.tallyId === tallyId))
+        }
+        return (current ?? []).map(n => 
+          n.date === date && n.tallyId === tallyId 
+            ? { ...n, note: note.trim() } 
+            : n
+        )
+      } else if (note.trim()) {
+        return [...(current ?? []), { date, tallyId, note: note.trim() }]
+      }
+      return current ?? []
+    })
   }
 
   return (
@@ -2940,9 +3022,11 @@ function TallyApp({ user }: { user: UserInfo }) {
         {showCalendar && (
           <CalendarView 
             events={currentEvents} 
-            tallies={currentTallies} 
+            tallies={currentTallies}
+            dailyNotes={currentDailyNotes}
             onClose={() => setShowCalendar(false)}
             onUpdateEventNote={updateEventNote}
+            onUpdateDailyNote={updateDailyNote}
           />
         )}
       </AnimatePresence>
