@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
@@ -1699,6 +1699,18 @@ function CalendarView({
   const [selectedDayEvents, setSelectedDayEvents] = useState<TallyEvent[]>([])
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [editingNotes, setEditingNotes] = useState<Record<number, string>>({})
+  const [collapsedTallies, setCollapsedTallies] = useState<Record<string, boolean>>({})
+
+  const getEventsByTallyForDay = (dayEvents: TallyEvent[]) => {
+    return dayEvents.reduce((acc, event) => {
+      if (!acc[event.tallyId]) {
+        acc[event.tallyId] = { count: 0, tally: getTallyById(event.tallyId), events: [] }
+      }
+      acc[event.tallyId].count += event.change
+      acc[event.tallyId].events.push(event)
+      return acc
+    }, {} as Record<string, { count: number; tally: Tally | undefined; events: TallyEvent[] }>)
+  }
 
   const handleDayClick = (day: number, dayEvents: TallyEvent[]) => {
     if (dayEvents.length === 0) return
@@ -1709,7 +1721,30 @@ function CalendarView({
       notesMap[e.timestamp] = e.note || ''
     })
     setEditingNotes(notesMap)
+    setCollapsedTallies({})
   }
+
+  const toggleTallyCollapse = (tallyId: string) => {
+    setCollapsedTallies(prev => ({
+      ...prev,
+      [tallyId]: !prev[tallyId]
+    }))
+  }
+
+  const collapseAllTallies = () => {
+    const allCollapsed: Record<string, boolean> = {}
+    Object.keys(getEventsByTallyForDay(selectedDayEvents)).forEach(tallyId => {
+      allCollapsed[tallyId] = true
+    })
+    setCollapsedTallies(allCollapsed)
+  }
+
+  const expandAllTallies = () => {
+    setCollapsedTallies({})
+  }
+
+  const allCollapsed = Object.keys(getEventsByTallyForDay(selectedDayEvents)).length > 0 &&
+    Object.keys(getEventsByTallyForDay(selectedDayEvents)).every(tallyId => collapsedTallies[tallyId])
 
   const handleSaveNotes = () => {
     selectedDayEvents.forEach(event => {
@@ -1727,17 +1762,6 @@ function CalendarView({
   const formatEventTime = (timestamp: number) => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
-
-  const getEventsByTallyForDay = (dayEvents: TallyEvent[]) => {
-    return dayEvents.reduce((acc, event) => {
-      if (!acc[event.tallyId]) {
-        acc[event.tallyId] = { count: 0, tally: getTallyById(event.tallyId), events: [] }
-      }
-      acc[event.tallyId].count += event.change
-      acc[event.tallyId].events.push(event)
-      return acc
-    }, {} as Record<string, { count: number; tally: Tally | undefined; events: TallyEvent[] }>)
   }
   
   const cells: React.ReactNode[] = []
@@ -1862,8 +1886,28 @@ function CalendarView({
               <CalendarBlank size={20} className="text-primary" weight="bold" />
               {selectedDay && `${monthNames[month]} ${selectedDay}, ${year}`}
             </DialogTitle>
-            <DialogDescription>
-              {selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'entry' : 'entries'} on this day
+            <DialogDescription className="flex items-center justify-between">
+              <span>{selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'entry' : 'entries'} on this day</span>
+              {Object.keys(getEventsByTallyForDay(selectedDayEvents)).length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={allCollapsed ? expandAllTallies : collapseAllTallies}
+                  className="h-7 text-xs gap-1"
+                >
+                  {allCollapsed ? (
+                    <>
+                      <CaretDown size={14} weight="bold" />
+                      Expand All
+                    </>
+                  ) : (
+                    <>
+                      <CaretUp size={14} weight="bold" />
+                      Collapse All
+                    </>
+                  )}
+                </Button>
+              )}
             </DialogDescription>
           </DialogHeader>
           {selectedDayEvents.length > 0 && (
@@ -1871,7 +1915,10 @@ function CalendarView({
               {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { count, tally, events: tallyEvents }]) => (
                 tally && (
                   <div key={tallyId} className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                    <button
+                      onClick={() => toggleTallyCollapse(tallyId)}
+                      className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg w-full text-left hover:bg-secondary/70 transition-colors"
+                    >
                       <div 
                         className="w-4 h-4 rounded-full shrink-0"
                         style={{ backgroundColor: tally.color }}
@@ -1887,32 +1934,51 @@ function CalendarView({
                       <div className="text-lg font-bold text-primary">
                         {count > 0 ? '+' : ''}{count}
                       </div>
-                    </div>
+                      <div className="text-muted-foreground">
+                        {collapsedTallies[tallyId] ? (
+                          <CaretDown size={18} weight="bold" />
+                        ) : (
+                          <CaretUp size={18} weight="bold" />
+                        )}
+                      </div>
+                    </button>
                     
-                    <div className="space-y-2 pl-2">
-                      {tallyEvents.map((event, index) => (
-                        <div key={event.timestamp} className="space-y-2 p-3 bg-card/50 rounded-lg border border-border/50">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              {formatEventTime(event.timestamp)}
-                            </span>
-                            <span className="font-medium text-primary">
-                              {event.change > 0 ? '+' : ''}{event.change}
-                            </span>
+                    <AnimatePresence>
+                      {!collapsedTallies[tallyId] && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-2 pl-2">
+                            {tallyEvents.map((event, index) => (
+                              <div key={event.timestamp} className="space-y-2 p-3 bg-card/50 rounded-lg border border-border/50">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    {formatEventTime(event.timestamp)}
+                                  </span>
+                                  <span className="font-medium text-primary">
+                                    {event.change > 0 ? '+' : ''}{event.change}
+                                  </span>
+                                </div>
+                                <Textarea
+                                  id={`event-note-${tallyId}-${index}`}
+                                  placeholder="Add a note for this entry..."
+                                  value={editingNotes[event.timestamp] || ''}
+                                  onChange={(e) => setEditingNotes(prev => ({
+                                    ...prev,
+                                    [event.timestamp]: e.target.value
+                                  }))}
+                                  className="min-h-[60px] resize-none text-sm"
+                                />
+                              </div>
+                            ))}
                           </div>
-                          <Textarea
-                            id={`event-note-${tallyId}-${index}`}
-                            placeholder="Add a note for this entry..."
-                            value={editingNotes[event.timestamp] || ''}
-                            onChange={(e) => setEditingNotes(prev => ({
-                              ...prev,
-                              [event.timestamp]: e.target.value
-                            }))}
-                            className="min-h-[60px] resize-none text-sm"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )
               ))}
