@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
@@ -24,6 +24,7 @@ interface Tally {
   count: number
   color: string
   animalType: number
+  goal?: number
 }
 
 interface UserInfo {
@@ -1622,6 +1623,16 @@ function TallyTile({
           >
             {tally.count}
           </motion.span>
+          {tally.goal && tally.count < tally.goal && (
+            <span className="text-xs text-white/70 font-medium">
+              / {tally.goal}
+            </span>
+          )}
+          {tally.goal && tally.count >= tally.goal && (
+            <span className="text-xs text-white/90 font-medium flex items-center gap-1">
+              <Trophy size={12} weight="fill" /> Goal!
+            </span>
+          )}
           <span 
             className="font-medium text-white/90 mt-2 w-full text-center break-words px-1 leading-tight"
             style={{
@@ -1904,6 +1915,128 @@ function CalendarView({
   )
 }
 
+function GoalCelebration({ 
+  tally, 
+  goal, 
+  onClose 
+}: { 
+  tally: Tally
+  goal: number
+  onClose: () => void 
+}) {
+  const [legPhase, setLegPhase] = useState(0)
+  const [showContent, setShowContent] = useState(false)
+  const animalType = tally.animalType ?? 0
+  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15 || animalType === 16 || animalType === 18 || animalType === 20
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowContent(true), 300)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    let animationId: number
+    const animate = () => {
+      setLegPhase(prev => prev + 0.08)
+      animationId = requestAnimationFrame(animate)
+    }
+    animationId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animationId)
+  }, [])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.1 }}
+        className="max-w-md w-full text-center space-y-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="relative"
+        >
+          <div 
+            className={`mx-auto rounded-3xl flex items-center justify-center ${isLargeAnimal ? 'w-40 h-40 md:w-48 md:h-48' : 'w-32 h-32 md:w-40 md:h-40'}`}
+            style={{ backgroundColor: tally.color }}
+          >
+            <motion.div
+              animate={{ 
+                y: [0, -8, 0],
+              }}
+              transition={{ 
+                duration: 0.5, 
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className={`${isLargeAnimal ? 'w-32 h-32 md:w-40 md:h-40' : 'w-24 h-24 md:w-32 md:h-32'}`}
+            >
+              <RunningAnimal variant={animalType} legPhase={legPhase} />
+            </motion.div>
+          </div>
+          
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.5, type: 'spring', stiffness: 400 }}
+            className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-amber-400 flex items-center justify-center shadow-lg"
+          >
+            <Trophy size={32} weight="fill" className="text-amber-800" />
+          </motion.div>
+        </motion.div>
+
+        {showContent && (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-3"
+          >
+            <motion.h2
+              initial={{ scale: 0.8 }}
+              animate={{ scale: [0.8, 1.1, 1] }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-3xl md:text-4xl font-bold text-foreground"
+            >
+              🎉 Congrats! 🎉
+            </motion.h2>
+            <p className="text-xl md:text-2xl text-foreground/90">
+              You hit <span className="font-bold text-primary">{goal} {tally.title}</span>!
+            </p>
+            <p className="text-lg text-muted-foreground">
+              What a pro! Keep up the great work!
+            </p>
+          </motion.div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+        >
+          <Button 
+            onClick={onClose}
+            size="lg"
+            className="mt-4"
+          >
+            Awesome!
+          </Button>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 function TallyApp({ user }: { user: UserInfo }) {
   const [tallies, setTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
   const [purchasedAnimals, setPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
@@ -1929,6 +2062,7 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [customAmountTallyId, setCustomAmountTallyId] = useState<string | null>(null)
   const [customAmount, setCustomAmount] = useState('1')
   const [customNote, setCustomNote] = useState('')
+  const [goalCelebration, setGoalCelebration] = useState<{ tally: Tally; goal: number } | null>(null)
   const isMobile = useIsMobile()
 
   const currentTallies = tallies ?? []
@@ -2049,6 +2183,12 @@ function TallyApp({ user }: { user: UserInfo }) {
       { tallyId: id, timestamp: Date.now(), change: 1 }
     ])
     
+    if (currentTally && currentTally.goal && newCount === currentTally.goal) {
+      setTimeout(() => {
+        setGoalCelebration({ tally: { ...currentTally, count: newCount }, goal: currentTally.goal! })
+      }, 300)
+    }
+    
     setAnimatingId(id)
     setAnimatingCount(newCount)
     
@@ -2093,6 +2233,12 @@ function TallyApp({ user }: { user: UserInfo }) {
   const updateTallyAnimal = (id: string, animalType: number) => {
     setTallies((current) =>
       (current ?? []).map((t) => (t.id === id ? { ...t, animalType } : t))
+    )
+  }
+
+  const updateTallyGoal = (id: string, goal: number | undefined) => {
+    setTallies((current) =>
+      (current ?? []).map((t) => (t.id === id ? { ...t, goal } : t))
     )
   }
 
@@ -2153,6 +2299,9 @@ function TallyApp({ user }: { user: UserInfo }) {
     if (!customAmountTallyId) return
     const amount = Math.max(1, parseInt(customAmount) || 1)
     
+    const currentTally = currentTallies.find(t => t.id === customAmountTallyId)
+    const newCount = currentTally ? currentTally.count + amount : amount
+    
     setTallies((current) =>
       (current ?? []).map((t) => (t.id === customAmountTallyId ? { ...t, count: t.count + amount } : t))
     )
@@ -2162,8 +2311,11 @@ function TallyApp({ user }: { user: UserInfo }) {
       { tallyId: customAmountTallyId, timestamp: Date.now(), change: amount, note: customNote.trim() || undefined }
     ])
     
-    const currentTally = currentTallies.find(t => t.id === customAmountTallyId)
-    const newCount = currentTally ? currentTally.count + amount : amount
+    if (currentTally && currentTally.goal && currentTally.count < currentTally.goal && newCount >= currentTally.goal) {
+      setTimeout(() => {
+        setGoalCelebration({ tally: { ...currentTally, count: newCount }, goal: currentTally.goal! })
+      }, 300)
+    }
     
     setAnimatingId(customAmountTallyId)
     setAnimatingCount(newCount)
@@ -2427,6 +2579,27 @@ function TallyApp({ user }: { user: UserInfo }) {
                               })}
                             </SelectContent>
                           </Select>
+
+                          <div className="flex items-center gap-2 w-full max-w-[200px] md:max-w-[240px]">
+                            <label htmlFor={`goal-input-${tally.id}`} className="text-xs text-muted-foreground whitespace-nowrap">Goal:</label>
+                            <Input
+                              id={`goal-input-${tally.id}`}
+                              type="number"
+                              min="1"
+                              placeholder="None"
+                              value={tally.goal ?? ''}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                if (value === '') {
+                                  updateTallyGoal(tally.id, undefined)
+                                } else {
+                                  const goal = Math.max(1, parseInt(value) || 1)
+                                  updateTallyGoal(tally.id, goal)
+                                }
+                              }}
+                              className="h-9 text-sm flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          </div>
                         </div>
                         
                         <div className="flex flex-col items-center gap-3 md:gap-4 w-full">
@@ -2680,6 +2853,16 @@ function TallyApp({ user }: { user: UserInfo }) {
             tallies={currentTallies} 
             onClose={() => setShowCalendar(false)}
             onUpdateEventNote={updateEventNote}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {goalCelebration && (
+          <GoalCelebration
+            tally={goalCelebration.tally}
+            goal={goalCelebration.goal}
+            onClose={() => setGoalCelebration(null)}
           />
         )}
       </AnimatePresence>
