@@ -1972,160 +1972,162 @@ function CalendarView({
             </DialogDescription>
           </DialogHeader>
           {selectedDayEvents.length > 0 && (
-            <div className="space-y-4 pt-2 overflow-y-auto flex-1">
-              {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { tally, events: tallyEvents }]) => {
-                const activeEvents = tallyEvents.filter(e => !pendingDeletes.has(e.timestamp))
-                const editedCount = activeEvents.reduce((sum, e) => {
-                  const editedChange = parseInt(editingChanges[e.timestamp]) || e.change
-                  return sum + editedChange
-                }, 0)
-                
-                return tally && (
-                  <div key={tallyId} className="space-y-3">
-                    <button
-                      onClick={() => toggleTallyCollapse(tallyId)}
-                      className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg w-full text-left hover:bg-secondary/70 transition-colors"
-                    >
-                      <div 
-                        className="w-4 h-4 rounded-full shrink-0"
-                        style={{ backgroundColor: tally.color }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-foreground truncate">
-                          {tally.title}
+            <>
+              <div className="space-y-4 pt-2 overflow-y-auto flex-1 min-h-0">
+                {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { tally, events: tallyEvents }]) => {
+                  const activeEvents = tallyEvents.filter(e => !pendingDeletes.has(e.timestamp))
+                  const editedCount = activeEvents.reduce((sum, e) => {
+                    const editedChange = parseInt(editingChanges[e.timestamp]) || e.change
+                    return sum + editedChange
+                  }, 0)
+                  
+                  return tally && (
+                    <div key={tallyId} className="space-y-3">
+                      <button
+                        onClick={() => toggleTallyCollapse(tallyId)}
+                        className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg w-full text-left hover:bg-secondary/70 transition-colors"
+                      >
+                        <div 
+                          className="w-4 h-4 rounded-full shrink-0"
+                          style={{ backgroundColor: tally.color }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-foreground truncate">
+                            {tally.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {activeEvents.length} {activeEvents.length === 1 ? 'entry' : 'entries'}
+                            {pendingDeletes.size > 0 && tallyEvents.some(e => pendingDeletes.has(e.timestamp)) && (
+                              <span className="text-destructive ml-1">
+                                ({tallyEvents.filter(e => pendingDeletes.has(e.timestamp)).length} to delete)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {activeEvents.length} {activeEvents.length === 1 ? 'entry' : 'entries'}
-                          {pendingDeletes.size > 0 && tallyEvents.some(e => pendingDeletes.has(e.timestamp)) && (
-                            <span className="text-destructive ml-1">
-                              ({tallyEvents.filter(e => pendingDeletes.has(e.timestamp)).length} to delete)
-                            </span>
+                        <div className="text-lg font-bold text-primary">
+                          {editedCount > 0 ? '+' : ''}{editedCount}
+                        </div>
+                        <div className="text-muted-foreground">
+                          {collapsedTallies[tallyId] ? (
+                            <CaretDown size={18} weight="bold" />
+                          ) : (
+                            <CaretUp size={18} weight="bold" />
                           )}
                         </div>
-                      </div>
-                      <div className="text-lg font-bold text-primary">
-                        {editedCount > 0 ? '+' : ''}{editedCount}
-                      </div>
-                      <div className="text-muted-foreground">
-                        {collapsedTallies[tallyId] ? (
-                          <CaretDown size={18} weight="bold" />
-                        ) : (
-                          <CaretUp size={18} weight="bold" />
-                        )}
-                      </div>
-                    </button>
-                    
-                    <AnimatePresence>
-                      {!collapsedTallies[tallyId] && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="space-y-3 pl-2">
-                            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-                              <label 
-                                htmlFor={`daily-note-${tallyId}`}
-                                className="text-xs font-medium text-primary mb-2 block"
-                              >
-                                Daily Summary Note
-                              </label>
-                              <Textarea
-                                id={`daily-note-${tallyId}`}
-                                placeholder={`Overall note for ${tally.title} on this day...`}
-                                value={editingDailyNotes[tallyId] || ''}
-                                onChange={(e) => setEditingDailyNotes(prev => ({
-                                  ...prev,
-                                  [tallyId]: e.target.value
-                                }))}
-                                className="min-h-[60px] resize-none text-sm bg-background"
-                              />
-                            </div>
-                            
-                            <div className="text-xs text-muted-foreground font-medium px-1">
-                              Individual Entries
-                            </div>
-                            
-                            {tallyEvents.map((event, index) => {
-                              const isMarkedForDelete = pendingDeletes.has(event.timestamp)
-                              return (
-                                <div 
-                                  key={event.timestamp} 
-                                  className={`space-y-2 p-3 rounded-lg border transition-all ${
-                                    isMarkedForDelete 
-                                      ? 'bg-destructive/10 border-destructive/30 opacity-60' 
-                                      : 'bg-card/50 border-border/50'
-                                  }`}
+                      </button>
+                      
+                      <AnimatePresence>
+                        {!collapsedTallies[tallyId] && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-3 pl-2">
+                              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                                <label 
+                                  htmlFor={`daily-note-${tallyId}`}
+                                  className="text-xs font-medium text-primary mb-2 block"
                                 >
-                                  <div className="flex items-center justify-between text-sm gap-2">
-                                    <span className="text-muted-foreground">
-                                      {formatEventTime(event.timestamp)}
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                      {isMarkedForDelete ? (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => setPendingDeletes(prev => {
-                                            const next = new Set(prev)
-                                            next.delete(event.timestamp)
-                                            return next
-                                          })}
-                                          className="h-7 text-xs text-primary"
-                                        >
-                                          Undo
-                                        </Button>
-                                      ) : (
-                                        <>
-                                          <div className="flex items-center gap-1">
-                                            <Input
-                                              type="number"
-                                              value={editingChanges[event.timestamp] || ''}
-                                              onChange={(e) => setEditingChanges(prev => ({
-                                                ...prev,
-                                                [event.timestamp]: e.target.value
-                                              }))}
-                                              className="w-16 h-7 text-sm text-center font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                            />
-                                          </div>
+                                  Daily Summary Note
+                                </label>
+                                <Textarea
+                                  id={`daily-note-${tallyId}`}
+                                  placeholder={`Overall note for ${tally.title} on this day...`}
+                                  value={editingDailyNotes[tallyId] || ''}
+                                  onChange={(e) => setEditingDailyNotes(prev => ({
+                                    ...prev,
+                                    [tallyId]: e.target.value
+                                  }))}
+                                  className="min-h-[60px] resize-none text-sm bg-background"
+                                />
+                              </div>
+                              
+                              <div className="text-xs text-muted-foreground font-medium px-1">
+                                Individual Entries
+                              </div>
+                              
+                              {tallyEvents.map((event, index) => {
+                                const isMarkedForDelete = pendingDeletes.has(event.timestamp)
+                                return (
+                                  <div 
+                                    key={event.timestamp} 
+                                    className={`space-y-2 p-3 rounded-lg border transition-all ${
+                                      isMarkedForDelete 
+                                        ? 'bg-destructive/10 border-destructive/30 opacity-60' 
+                                        : 'bg-card/50 border-border/50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between text-sm gap-2">
+                                      <span className="text-muted-foreground">
+                                        {formatEventTime(event.timestamp)}
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        {isMarkedForDelete ? (
                                           <Button
                                             variant="ghost"
-                                            size="icon"
-                                            onClick={() => setPendingDeletes(prev => new Set([...prev, event.timestamp]))}
-                                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            size="sm"
+                                            onClick={() => setPendingDeletes(prev => {
+                                              const next = new Set(prev)
+                                              next.delete(event.timestamp)
+                                              return next
+                                            })}
+                                            className="h-7 text-xs text-primary"
                                           >
-                                            <Trash size={14} weight="bold" />
+                                            Undo
                                           </Button>
-                                        </>
-                                      )}
+                                        ) : (
+                                          <>
+                                            <div className="flex items-center gap-1">
+                                              <Input
+                                                type="number"
+                                                value={editingChanges[event.timestamp] || ''}
+                                                onChange={(e) => setEditingChanges(prev => ({
+                                                  ...prev,
+                                                  [event.timestamp]: e.target.value
+                                                }))}
+                                                className="w-16 h-7 text-sm text-center font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                              />
+                                            </div>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={() => setPendingDeletes(prev => new Set([...prev, event.timestamp]))}
+                                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            >
+                                              <Trash size={14} weight="bold" />
+                                            </Button>
+                                          </>
+                                        )}
+                                      </div>
                                     </div>
+                                    {!isMarkedForDelete && (
+                                      <Textarea
+                                        id={`event-note-${tallyId}-${index}`}
+                                        placeholder="Add a note for this entry..."
+                                        value={editingNotes[event.timestamp] || ''}
+                                        onChange={(e) => setEditingNotes(prev => ({
+                                          ...prev,
+                                          [event.timestamp]: e.target.value
+                                        }))}
+                                        className="min-h-[60px] resize-none text-sm"
+                                      />
+                                    )}
                                   </div>
-                                  {!isMarkedForDelete && (
-                                    <Textarea
-                                      id={`event-note-${tallyId}-${index}`}
-                                      placeholder="Add a note for this entry..."
-                                      value={editingNotes[event.timestamp] || ''}
-                                      onChange={(e) => setEditingNotes(prev => ({
-                                        ...prev,
-                                        [event.timestamp]: e.target.value
-                                      }))}
-                                      className="min-h-[60px] resize-none text-sm"
-                                    />
-                                  )}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )
-              })}
+                                )
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )
+                })}
+              </div>
               
-              <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+              <div className="flex justify-end gap-2 pt-4 border-t border-border/50 shrink-0">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -2139,7 +2141,7 @@ function CalendarView({
                   Save Changes
                 </Button>
               </div>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
