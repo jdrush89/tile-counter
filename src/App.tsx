@@ -1659,7 +1659,9 @@ function CalendarView({
   dailyNotes,
   onClose,
   onUpdateEventNote,
-  onUpdateDailyNote
+  onUpdateDailyNote,
+  onDeleteEvent,
+  onUpdateEventChange
 }: { 
   events: TallyEvent[]
   tallies: Tally[]
@@ -1667,6 +1669,8 @@ function CalendarView({
   onClose: () => void
   onUpdateEventNote: (timestamp: number, note: string) => void
   onUpdateDailyNote: (date: string, tallyId: string, note: string) => void
+  onDeleteEvent: (timestamp: number) => void
+  onUpdateEventChange: (timestamp: number, newChange: number) => void
 }) {
   const [currentDate, setCurrentDate] = useState(new Date())
   
@@ -1711,6 +1715,8 @@ function CalendarView({
   const [editingNotes, setEditingNotes] = useState<Record<number, string>>({})
   const [editingDailyNotes, setEditingDailyNotes] = useState<Record<string, string>>({})
   const [collapsedTallies, setCollapsedTallies] = useState<Record<string, boolean>>({})
+  const [editingChanges, setEditingChanges] = useState<Record<number, string>>({})
+  const [pendingDeletes, setPendingDeletes] = useState<Set<number>>(new Set())
 
   const getDateKey = (day: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
@@ -1735,10 +1741,14 @@ function CalendarView({
     setSelectedDay(day)
     setSelectedDayEvents(dayEvents)
     const notesMap: Record<number, string> = {}
+    const changesMap: Record<number, string> = {}
     dayEvents.forEach(e => {
       notesMap[e.timestamp] = e.note || ''
+      changesMap[e.timestamp] = String(e.change)
     })
     setEditingNotes(notesMap)
+    setEditingChanges(changesMap)
+    setPendingDeletes(new Set())
     
     const dailyNotesMap: Record<string, string> = {}
     const tallyIds = [...new Set(dayEvents.map(e => e.tallyId))]
@@ -1774,10 +1784,21 @@ function CalendarView({
   const handleSaveNotes = () => {
     if (selectedDay === null) return
     
+    pendingDeletes.forEach(timestamp => {
+      onDeleteEvent(timestamp)
+    })
+    
     selectedDayEvents.forEach(event => {
+      if (pendingDeletes.has(event.timestamp)) return
+      
       const newNote = editingNotes[event.timestamp] || ''
       if (newNote !== (event.note || '')) {
         onUpdateEventNote(event.timestamp, newNote)
+      }
+      
+      const newChange = parseInt(editingChanges[event.timestamp]) || event.change
+      if (newChange !== event.change) {
+        onUpdateEventChange(event.timestamp, newChange)
       }
     })
     
@@ -1792,8 +1813,10 @@ function CalendarView({
     setSelectedDayEvents([])
     setSelectedDay(null)
     setEditingNotes({})
+    setEditingChanges({})
     setEditingDailyNotes({})
-    toast.success('Notes updated')
+    setPendingDeletes(new Set())
+    toast.success('Changes saved')
   }
 
   const formatEventTime = (timestamp: number) => {
@@ -1950,8 +1973,14 @@ function CalendarView({
           </DialogHeader>
           {selectedDayEvents.length > 0 && (
             <div className="space-y-4 pt-2 overflow-y-auto flex-1">
-              {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { count, tally, events: tallyEvents }]) => (
-                tally && (
+              {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { tally, events: tallyEvents }]) => {
+                const activeEvents = tallyEvents.filter(e => !pendingDeletes.has(e.timestamp))
+                const editedCount = activeEvents.reduce((sum, e) => {
+                  const editedChange = parseInt(editingChanges[e.timestamp]) || e.change
+                  return sum + editedChange
+                }, 0)
+                
+                return tally && (
                   <div key={tallyId} className="space-y-3">
                     <button
                       onClick={() => toggleTallyCollapse(tallyId)}
@@ -1966,11 +1995,16 @@ function CalendarView({
                           {tally.title}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {tallyEvents.length} {tallyEvents.length === 1 ? 'entry' : 'entries'}
+                          {activeEvents.length} {activeEvents.length === 1 ? 'entry' : 'entries'}
+                          {pendingDeletes.size > 0 && tallyEvents.some(e => pendingDeletes.has(e.timestamp)) && (
+                            <span className="text-destructive ml-1">
+                              ({tallyEvents.filter(e => pendingDeletes.has(e.timestamp)).length} to delete)
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="text-lg font-bold text-primary">
-                        {count > 0 ? '+' : ''}{count}
+                        {editedCount > 0 ? '+' : ''}{editedCount}
                       </div>
                       <div className="text-muted-foreground">
                         {collapsedTallies[tallyId] ? (
@@ -2014,35 +2048,82 @@ function CalendarView({
                               Individual Entries
                             </div>
                             
-                            {tallyEvents.map((event, index) => (
-                              <div key={event.timestamp} className="space-y-2 p-3 bg-card/50 rounded-lg border border-border/50">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-muted-foreground">
-                                    {formatEventTime(event.timestamp)}
-                                  </span>
-                                  <span className="font-medium text-primary">
-                                    {event.change > 0 ? '+' : ''}{event.change}
-                                  </span>
+                            {tallyEvents.map((event, index) => {
+                              const isMarkedForDelete = pendingDeletes.has(event.timestamp)
+                              return (
+                                <div 
+                                  key={event.timestamp} 
+                                  className={`space-y-2 p-3 rounded-lg border transition-all ${
+                                    isMarkedForDelete 
+                                      ? 'bg-destructive/10 border-destructive/30 opacity-60' 
+                                      : 'bg-card/50 border-border/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between text-sm gap-2">
+                                    <span className="text-muted-foreground">
+                                      {formatEventTime(event.timestamp)}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {isMarkedForDelete ? (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setPendingDeletes(prev => {
+                                            const next = new Set(prev)
+                                            next.delete(event.timestamp)
+                                            return next
+                                          })}
+                                          className="h-7 text-xs text-primary"
+                                        >
+                                          Undo
+                                        </Button>
+                                      ) : (
+                                        <>
+                                          <div className="flex items-center gap-1">
+                                            <Input
+                                              type="number"
+                                              value={editingChanges[event.timestamp] || ''}
+                                              onChange={(e) => setEditingChanges(prev => ({
+                                                ...prev,
+                                                [event.timestamp]: e.target.value
+                                              }))}
+                                              className="w-16 h-7 text-sm text-center font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
+                                          </div>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setPendingDeletes(prev => new Set([...prev, event.timestamp]))}
+                                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          >
+                                            <Trash size={14} weight="bold" />
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {!isMarkedForDelete && (
+                                    <Textarea
+                                      id={`event-note-${tallyId}-${index}`}
+                                      placeholder="Add a note for this entry..."
+                                      value={editingNotes[event.timestamp] || ''}
+                                      onChange={(e) => setEditingNotes(prev => ({
+                                        ...prev,
+                                        [event.timestamp]: e.target.value
+                                      }))}
+                                      className="min-h-[60px] resize-none text-sm"
+                                    />
+                                  )}
                                 </div>
-                                <Textarea
-                                  id={`event-note-${tallyId}-${index}`}
-                                  placeholder="Add a note for this entry..."
-                                  value={editingNotes[event.timestamp] || ''}
-                                  onChange={(e) => setEditingNotes(prev => ({
-                                    ...prev,
-                                    [event.timestamp]: e.target.value
-                                  }))}
-                                  className="min-h-[60px] resize-none text-sm"
-                                />
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
                 )
-              ))}
+              })}
               
               <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
                 <Button
@@ -2055,7 +2136,7 @@ function CalendarView({
                   Cancel
                 </Button>
                 <Button onClick={handleSaveNotes}>
-                  Save Notes
+                  Save Changes
                 </Button>
               </div>
             </div>
@@ -2518,6 +2599,46 @@ function TallyApp({ user }: { user: UserInfo }) {
       (current ?? []).map((e) => 
         e.timestamp === timestamp 
           ? { ...e, note: note.trim() || undefined } 
+          : e
+      )
+    )
+  }
+
+  const deleteEvent = (timestamp: number) => {
+    const event = currentEvents.find(e => e.timestamp === timestamp)
+    if (!event) return
+    
+    setTallies((current) =>
+      (current ?? []).map((t) => 
+        t.id === event.tallyId 
+          ? { ...t, count: t.count - event.change } 
+          : t
+      )
+    )
+    
+    setTallyEvents((current) =>
+      (current ?? []).filter((e) => e.timestamp !== timestamp)
+    )
+  }
+
+  const updateEventChange = (timestamp: number, newChange: number) => {
+    const event = currentEvents.find(e => e.timestamp === timestamp)
+    if (!event) return
+    
+    const diff = newChange - event.change
+    
+    setTallies((current) =>
+      (current ?? []).map((t) => 
+        t.id === event.tallyId 
+          ? { ...t, count: t.count + diff } 
+          : t
+      )
+    )
+    
+    setTallyEvents((current) =>
+      (current ?? []).map((e) => 
+        e.timestamp === timestamp 
+          ? { ...e, change: newChange } 
           : e
       )
     )
@@ -3027,6 +3148,8 @@ function TallyApp({ user }: { user: UserInfo }) {
             onClose={() => setShowCalendar(false)}
             onUpdateEventNote={updateEventNote}
             onUpdateDailyNote={updateDailyNote}
+            onDeleteEvent={deleteEvent}
+            onUpdateEventChange={updateEventChange}
           />
         )}
       </AnimatePresence>
