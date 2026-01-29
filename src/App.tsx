@@ -1697,12 +1697,15 @@ function CalendarView({
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
   const [selectedDayEvents, setSelectedDayEvents] = useState<TallyEvent[]>([])
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [editingNotes, setEditingNotes] = useState<Record<number, string>>({})
 
-  const handleEventsClick = (events: TallyEvent[]) => {
-    setSelectedDayEvents(events)
+  const handleDayClick = (day: number, dayEvents: TallyEvent[]) => {
+    if (dayEvents.length === 0) return
+    setSelectedDay(day)
+    setSelectedDayEvents(dayEvents)
     const notesMap: Record<number, string> = {}
-    events.forEach(e => {
+    dayEvents.forEach(e => {
       notesMap[e.timestamp] = e.note || ''
     })
     setEditingNotes(notesMap)
@@ -1716,6 +1719,7 @@ function CalendarView({
       }
     })
     setSelectedDayEvents([])
+    setSelectedDay(null)
     setEditingNotes({})
     toast.success('Notes updated')
   }
@@ -1723,6 +1727,17 @@ function CalendarView({
   const formatEventTime = (timestamp: number) => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const getEventsByTallyForDay = (dayEvents: TallyEvent[]) => {
+    return dayEvents.reduce((acc, event) => {
+      if (!acc[event.tallyId]) {
+        acc[event.tallyId] = { count: 0, tally: getTallyById(event.tallyId), events: [] }
+      }
+      acc[event.tallyId].count += event.change
+      acc[event.tallyId].events.push(event)
+      return acc
+    }, {} as Record<string, { count: number; tally: Tally | undefined; events: TallyEvent[] }>)
   }
   
   const cells: React.ReactNode[] = []
@@ -1732,21 +1747,17 @@ function CalendarView({
   
   for (let day = 1; day <= daysInMonth; day++) {
     const dayEvents = getEventsForDay(day)
-    const eventsByTally = dayEvents.reduce((acc, event) => {
-      if (!acc[event.tallyId]) {
-        acc[event.tallyId] = { count: 0, tally: getTallyById(event.tallyId), events: [] }
-      }
-      acc[event.tallyId].count += event.change
-      acc[event.tallyId].events.push(event)
-      return acc
-    }, {} as Record<string, { count: number; tally: Tally | undefined; events: TallyEvent[] }>)
+    const eventsByTally = getEventsByTallyForDay(dayEvents)
+    const hasEvents = dayEvents.length > 0
     
     cells.push(
-      <div 
+      <button 
         key={day}
-        className={`h-20 md:h-24 border border-border/50 rounded-lg p-1.5 md:p-2 transition-colors ${
-          isToday(day) ? 'bg-primary/10 border-primary/50' : 'bg-card/50 hover:bg-card'
-        }`}
+        onClick={() => handleDayClick(day, dayEvents)}
+        disabled={!hasEvents}
+        className={`h-20 md:h-24 border border-border/50 rounded-lg p-1.5 md:p-2 transition-colors text-left w-full ${
+          isToday(day) ? 'bg-primary/10 border-primary/50' : 'bg-card/50'
+        } ${hasEvents ? 'hover:bg-card hover:border-primary/30 cursor-pointer' : 'cursor-default'}`}
       >
         <div className={`text-xs md:text-sm font-medium mb-1 ${isToday(day) ? 'text-primary' : 'text-muted-foreground'}`}>
           {day}
@@ -1754,10 +1765,9 @@ function CalendarView({
         <div className="space-y-0.5 overflow-y-auto max-h-12 md:max-h-16">
           {Object.entries(eventsByTally).map(([tallyId, { count, tally, events: tallyEvents }]) => (
             tally && (
-              <button 
+              <div 
                 key={tallyId}
-                onClick={() => handleEventsClick(tallyEvents)}
-                className="flex items-center gap-1 text-[10px] md:text-xs w-full hover:bg-primary/10 rounded px-0.5 transition-colors cursor-pointer"
+                className="flex items-center gap-1 text-[10px] md:text-xs w-full px-0.5"
               >
                 <div 
                   className="w-2 h-2 rounded-full shrink-0"
@@ -1768,11 +1778,11 @@ function CalendarView({
                   +{count}
                   {tallyEvents.some(e => e.note) && <NotePencil size={10} className="text-primary" />}
                 </span>
-              </button>
+              </div>
             )
           ))}
         </div>
-      </div>
+      </button>
     )
   }
   
@@ -1836,70 +1846,84 @@ function CalendarView({
         </div>
 
         <div className="mt-4 text-xs text-muted-foreground text-center">
-          Click on a tally entry to view or edit its note
+          Click on a day to view details and edit notes
         </div>
       </div>
 
-      <Dialog open={selectedDayEvents.length > 0} onOpenChange={(open) => !open && setSelectedDayEvents([])}>
-        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+      <Dialog open={selectedDayEvents.length > 0} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedDayEvents([])
+          setSelectedDay(null)
+        }
+      }}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <NotePencil size={20} className="text-primary" weight="bold" />
-              Event Details
+              <CalendarBlank size={20} className="text-primary" weight="bold" />
+              {selectedDay && `${monthNames[month]} ${selectedDay}, ${year}`}
             </DialogTitle>
             <DialogDescription>
-              View or edit notes for these entries.
+              {selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'entry' : 'entries'} on this day
             </DialogDescription>
           </DialogHeader>
           {selectedDayEvents.length > 0 && (
             <div className="space-y-4 pt-2 overflow-y-auto flex-1">
-              <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                <div 
-                  className="w-4 h-4 rounded-full shrink-0"
-                  style={{ backgroundColor: getTallyById(selectedDayEvents[0].tallyId)?.color }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground truncate">
-                    {getTallyById(selectedDayEvents[0].tallyId)?.title || 'Unknown'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(selectedDayEvents[0].timestamp).toLocaleDateString()} • {selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'entry' : 'entries'}
-                  </div>
-                </div>
-                <div className="text-lg font-bold text-primary">
-                  +{selectedDayEvents.reduce((sum, e) => sum + e.change, 0)}
-                </div>
-              </div>
-              
-              <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
-                {selectedDayEvents.map((event, index) => (
-                  <div key={event.timestamp} className="space-y-2 p-3 bg-card/50 rounded-lg border border-border/50">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {formatEventTime(event.timestamp)}
-                      </span>
-                      <span className="font-medium text-primary">
-                        {event.change > 0 ? '+' : ''}{event.change}
-                      </span>
+              {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { count, tally, events: tallyEvents }]) => (
+                tally && (
+                  <div key={tallyId} className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                      <div 
+                        className="w-4 h-4 rounded-full shrink-0"
+                        style={{ backgroundColor: tally.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-foreground truncate">
+                          {tally.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {tallyEvents.length} {tallyEvents.length === 1 ? 'entry' : 'entries'}
+                        </div>
+                      </div>
+                      <div className="text-lg font-bold text-primary">
+                        {count > 0 ? '+' : ''}{count}
+                      </div>
                     </div>
-                    <Textarea
-                      id={`event-note-${index}`}
-                      placeholder="Add a note for this entry..."
-                      value={editingNotes[event.timestamp] || ''}
-                      onChange={(e) => setEditingNotes(prev => ({
-                        ...prev,
-                        [event.timestamp]: e.target.value
-                      }))}
-                      className="min-h-[60px] resize-none text-sm"
-                    />
+                    
+                    <div className="space-y-2 pl-2">
+                      {tallyEvents.map((event, index) => (
+                        <div key={event.timestamp} className="space-y-2 p-3 bg-card/50 rounded-lg border border-border/50">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              {formatEventTime(event.timestamp)}
+                            </span>
+                            <span className="font-medium text-primary">
+                              {event.change > 0 ? '+' : ''}{event.change}
+                            </span>
+                          </div>
+                          <Textarea
+                            id={`event-note-${tallyId}-${index}`}
+                            placeholder="Add a note for this entry..."
+                            value={editingNotes[event.timestamp] || ''}
+                            onChange={(e) => setEditingNotes(prev => ({
+                              ...prev,
+                              [event.timestamp]: e.target.value
+                            }))}
+                            className="min-h-[60px] resize-none text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
+                )
+              ))}
               
               <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
                 <Button
                   variant="outline"
-                  onClick={() => setSelectedDayEvents([])}
+                  onClick={() => {
+                    setSelectedDayEvents([])
+                    setSelectedDay(null)
+                  }}
                 >
                   Cancel
                 </Button>
