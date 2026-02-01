@@ -1341,13 +1341,15 @@ function RunningMousePat({ legPhase }: { legPhase: number }) {
           <ellipse cx="44" cy="33" rx="6" ry="5" fill="white" fillOpacity="0.85" />
           <ellipse cx="44" cy="25" rx="6.5" ry="5.5" fill="white" fillOpacity="0.9" />
           <circle cx="44" cy="16" r="7" fill="white" fillOpacity="0.9" />
-          <circle cx="41" cy="14" r="1.8" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
-          <circle cx="47" cy="14" r="1.8" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
-          <path d="M42 19 Q44 21 46 19" stroke="oklch(0.25 0 0)" strokeOpacity="0.5" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+          <circle cx="41" cy="15" r="1.8" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+          <circle cx="47" cy="15" r="1.8" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+          <path d="M40 12 Q41 13 42 12" stroke="oklch(0.25 0 0)" strokeOpacity="0.5" strokeWidth="1" fill="none" strokeLinecap="round" />
+          <path d="M46 12 Q47 13 48 12" stroke="oklch(0.25 0 0)" strokeOpacity="0.5" strokeWidth="1" fill="none" strokeLinecap="round" />
+          <path d="M42 20 Q44 18 46 20" stroke="oklch(0.25 0 0)" strokeOpacity="0.5" strokeWidth="1.2" fill="none" strokeLinecap="round" />
           <ellipse cx="40" cy="10" rx="1.2" ry="2.5" fill="white" fillOpacity="0.8" />
           <ellipse cx="48" cy="10" rx="1.2" ry="2.5" fill="white" fillOpacity="0.8" />
-          <circle cx="41" cy="14.5" r="0.5" fill="white" fillOpacity="0.6" />
-          <circle cx="47" cy="14.5" r="0.5" fill="white" fillOpacity="0.6" />
+          <circle cx="41" cy="15.5" r="0.5" fill="white" fillOpacity="0.6" />
+          <circle cx="47" cy="15.5" r="0.5" fill="white" fillOpacity="0.6" />
         </g>
         <ellipse cx="14" cy="30" rx="8" ry="7" fill="white" fillOpacity="0.9" />
         <circle cx="14" cy="22" r="7" fill="white" fillOpacity="0.9" />
