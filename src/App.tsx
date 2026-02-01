@@ -272,6 +272,7 @@ const PREMIUM_ANIMALS = [
   { id: 18, name: 'Anglerfish', price: 3.99 },
   { id: 19, name: 'Shark', price: 3.99 },
   { id: 20, name: 'Whale', price: 100 },
+  { id: 21, name: 'Mouse Pat', price: 3.99 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
@@ -1324,6 +1325,71 @@ function SwimmingWhale({ legPhase }: { legPhase: number }) {
   )
 }
 
+function RunningMousePat({ legPhase }: { legPhase: number }) {
+  const legSwing = Math.sin(legPhase) * 20
+  const armPat = Math.sin(legPhase * 2) * 8
+  const bodyBob = Math.abs(Math.sin(legPhase)) * 2
+  const tailWave = Math.sin(legPhase * 1.5) * 15
+  const caterpillarWiggle = Math.sin(legPhase * 0.8) * 3
+  
+  return (
+    <svg viewBox="0 0 60 45" className="w-full h-full">
+      <g transform={`translate(0, ${-bodyBob})`}>
+        <g transform={`translate(${caterpillarWiggle * 0.5}, 0)`}>
+          <ellipse cx="42" cy="34" rx="4" ry="3" fill="white" fillOpacity="0.75" />
+          <ellipse cx="38" cy="35" rx="3.5" ry="2.8" fill="white" fillOpacity="0.8" />
+          <ellipse cx="34" cy="35.5" rx="3.2" ry="2.6" fill="white" fillOpacity="0.8" />
+          <ellipse cx="30" cy="35" rx="3" ry="2.5" fill="white" fillOpacity="0.85" />
+          <ellipse cx="26" cy="34" rx="3.5" ry="3" fill="white" fillOpacity="0.9" />
+          <circle cx="26" cy="31" r="3.5" fill="white" fillOpacity="0.9" />
+          <circle cx="24.5" cy="30" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+          <circle cx="27.5" cy="30" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+          <path d="M25 32.5 Q26 33.5 27 32.5" stroke="oklch(0.25 0 0)" strokeOpacity="0.5" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+          <ellipse cx="24" cy="28" rx="0.8" ry="1.5" fill="white" fillOpacity="0.8" />
+          <ellipse cx="28" cy="28" rx="0.8" ry="1.5" fill="white" fillOpacity="0.8" />
+          <circle cx="24.5" cy="30.5" r="0.3" fill="white" fillOpacity="0.6" />
+          <circle cx="27.5" cy="30.5" r="0.3" fill="white" fillOpacity="0.6" />
+        </g>
+        <ellipse cx="14" cy="28" rx="8" ry="7" fill="white" fillOpacity="0.9" />
+        <circle cx="14" cy="20" r="7" fill="white" fillOpacity="0.9" />
+        <ellipse cx="9" cy="14" rx="4" ry="6" fill="white" fillOpacity="0.9" />
+        <ellipse cx="9" cy="14" rx="2" ry="4" fill="oklch(0.7 0.1 0)" fillOpacity="0.3" />
+        <ellipse cx="19" cy="14" rx="4" ry="6" fill="white" fillOpacity="0.9" />
+        <ellipse cx="19" cy="14" rx="2" ry="4" fill="oklch(0.7 0.1 0)" fillOpacity="0.3" />
+        <circle cx="11" cy="19" r="1.5" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <circle cx="17" cy="19" r="1.5" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <ellipse cx="14" cy="22" rx="2" ry="1.2" fill="white" fillOpacity="0.6" />
+        <circle cx="14" cy="21.5" r="0.6" fill="oklch(0.7 0.1 0)" fillOpacity="0.5" />
+        <line x1="19" y1="21" x2="24" y2="20" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.7" />
+        <line x1="19" y1="22" x2="24" y2="22" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.7" />
+        <line x1="19" y1="23" x2="24" y2="24" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.7" />
+        <line x1="9" y1="21" x2="4" y2="20" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.7" />
+        <line x1="9" y1="22" x2="4" y2="22" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.7" />
+        <line x1="9" y1="23" x2="4" y2="24" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.7" />
+        <g transform={`rotate(${armPat}, 20, 26)`}>
+          <path d="M20 26 Q24 28 26 32" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9" />
+          <circle cx="26" cy="33" r="2" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-armPat * 0.5}, 8, 26)`}>
+          <path d="M8 26 Q6 30 8 34" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9" />
+          <circle cx="8" cy="35" r="2" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${legSwing}, 10, 34)`}>
+          <line x1="10" y1="34" x2="8" y2="42" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="7" cy="43" rx="2" ry="1.2" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 18, 34)`}>
+          <line x1="18" y1="34" x2="20" y2="42" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="21" cy="43" rx="2" ry="1.2" fill="white" fillOpacity="0.9" />
+        </g>
+        <g transform={`rotate(${tailWave}, 6, 30)`}>
+          <path d="M6 30 Q2 28 0 24 Q-1 20 2 22" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
   switch (variant) {
     case 0:
@@ -1368,6 +1434,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <SwimmingShark legPhase={legPhase} />
     case 20:
       return <SwimmingWhale legPhase={legPhase} />
+    case 21:
+      return <RunningMousePat legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
@@ -1375,7 +1443,7 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
 
 function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
   const peekAmount = 12
-  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13 || variant === 14 || variant === 15 || variant === 16 || variant === 18 || variant === 20
+  const isLargeAnimal = variant === 8 || variant === 9 || variant === 10 || variant === 13 || variant === 14 || variant === 15 || variant === 16 || variant === 18 || variant === 20 || variant === 21
   const isBanana = variant === 11
   
   return (
@@ -1692,7 +1760,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
     }
   }, [])
 
-  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15 || animalType === 16 || animalType === 18 || animalType === 20
+  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15 || animalType === 16 || animalType === 18 || animalType === 20 || animalType === 21
 
   return (
     <AnimatePresence mode="wait">
@@ -2345,7 +2413,7 @@ function GoalCelebration({
   const [legPhase, setLegPhase] = useState(0)
   const [showContent, setShowContent] = useState(false)
   const animalType = tally.animalType ?? 0
-  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15 || animalType === 16 || animalType === 18 || animalType === 20
+  const isLargeAnimal = animalType === 8 || animalType === 9 || animalType === 10 || animalType === 13 || animalType === 14 || animalType === 15 || animalType === 16 || animalType === 18 || animalType === 20 || animalType === 21
 
   useEffect(() => {
     const timer = setTimeout(() => setShowContent(true), 300)
