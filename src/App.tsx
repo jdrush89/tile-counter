@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
@@ -59,6 +59,190 @@ const COLORS = [
   'oklch(0.65 0.2 200)',
   'oklch(0.65 0.2 80)',
 ]
+
+function ColorPickerDialog({ 
+  open, 
+  onOpenChange, 
+  currentColor, 
+  onColorSelect 
+}: { 
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  currentColor: string
+  onColorSelect: (color: string) => void
+}) {
+  const parseOklch = (color: string) => {
+    const match = color.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/)
+    if (match) {
+      return { l: parseFloat(match[1]), c: parseFloat(match[2]), h: parseFloat(match[3]) }
+    }
+    return { l: 0.65, c: 0.2, h: 250 }
+  }
+
+  const initialValues = parseOklch(currentColor)
+  const [lightness, setLightness] = useState(initialValues.l)
+  const [chroma, setChroma] = useState(initialValues.c)
+  const [hue, setHue] = useState(initialValues.h)
+
+  useEffect(() => {
+    if (open) {
+      const values = parseOklch(currentColor)
+      setLightness(values.l)
+      setChroma(values.c)
+      setHue(values.h)
+    }
+  }, [open, currentColor])
+
+  const previewColor = `oklch(${lightness} ${chroma} ${hue})`
+
+  const hueGradient = Array.from({ length: 36 }, (_, i) => {
+    const h = i * 10
+    return `oklch(0.65 0.2 ${h})`
+  }).join(', ')
+
+  const chromaGradient = `oklch(${lightness} 0 ${hue}), oklch(${lightness} 0.15 ${hue}), oklch(${lightness} 0.3 ${hue})`
+  const lightnessGradient = `oklch(0.3 ${chroma} ${hue}), oklch(0.5 ${chroma} ${hue}), oklch(0.7 ${chroma} ${hue}), oklch(0.9 ${chroma} ${hue})`
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Palette size={20} className="text-primary" weight="bold" />
+            Custom Color
+          </DialogTitle>
+          <DialogDescription>
+            Fine-tune your tile color with precision controls.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-6 pt-4">
+          <div className="flex items-center justify-center">
+            <div 
+              className="w-24 h-24 rounded-2xl shadow-lg transition-colors duration-150"
+              style={{ backgroundColor: previewColor }}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Hue</label>
+                <span className="text-xs text-muted-foreground">{Math.round(hue)}°</span>
+              </div>
+              <div className="relative h-8 rounded-lg overflow-hidden">
+                <div 
+                  className="absolute inset-0"
+                  style={{ background: `linear-gradient(to right, ${hueGradient})` }}
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="360"
+                  step="1"
+                  value={hue}
+                  onChange={(e) => setHue(parseFloat(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div 
+                  className="absolute top-1/2 -translate-y-1/2 w-4 h-6 bg-white rounded border-2 border-foreground/30 shadow-md pointer-events-none"
+                  style={{ left: `calc(${(hue / 360) * 100}% - 8px)` }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Saturation</label>
+                <span className="text-xs text-muted-foreground">{Math.round(chroma * 100)}%</span>
+              </div>
+              <div className="relative h-8 rounded-lg overflow-hidden">
+                <div 
+                  className="absolute inset-0"
+                  style={{ background: `linear-gradient(to right, ${chromaGradient})` }}
+                />
+                <input
+                  type="range"
+                  min="0.05"
+                  max="0.3"
+                  step="0.01"
+                  value={chroma}
+                  onChange={(e) => setChroma(parseFloat(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div 
+                  className="absolute top-1/2 -translate-y-1/2 w-4 h-6 bg-white rounded border-2 border-foreground/30 shadow-md pointer-events-none"
+                  style={{ left: `calc(${((chroma - 0.05) / 0.25) * 100}% - 8px)` }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Brightness</label>
+                <span className="text-xs text-muted-foreground">{Math.round(lightness * 100)}%</span>
+              </div>
+              <div className="relative h-8 rounded-lg overflow-hidden">
+                <div 
+                  className="absolute inset-0"
+                  style={{ background: `linear-gradient(to right, ${lightnessGradient})` }}
+                />
+                <input
+                  type="range"
+                  min="0.35"
+                  max="0.85"
+                  step="0.01"
+                  value={lightness}
+                  onChange={(e) => setLightness(parseFloat(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div 
+                  className="absolute top-1/2 -translate-y-1/2 w-4 h-6 bg-white rounded border-2 border-foreground/30 shadow-md pointer-events-none"
+                  style={{ left: `calc(${((lightness - 0.35) / 0.5) * 100}% - 8px)` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Quick Presets</label>
+            <div className="flex flex-wrap gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color}
+                  onClick={() => {
+                    const values = parseOklch(color)
+                    setLightness(values.l)
+                    setChroma(values.c)
+                    setHue(values.h)
+                  }}
+                  className="w-8 h-8 rounded-full transition-all hover:scale-110"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                onColorSelect(previewColor)
+                onOpenChange(false)
+              }}
+            >
+              Apply Color
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 const BASE_ANIMALS = [
   { id: 0, name: 'Dog', unlockAt: 0 },
@@ -2298,6 +2482,8 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [customAmount, setCustomAmount] = useState('1')
   const [customNote, setCustomNote] = useState('')
   const [goalCelebration, setGoalCelebration] = useState<{ tally: Tally; goal: number } | null>(null)
+  const [colorPickerOpen, setColorPickerOpen] = useState(false)
+  const [colorPickerTallyId, setColorPickerTallyId] = useState<string | null>(null)
   const isMobile = useIsMobile()
 
   const currentTallies = tallies ?? []
@@ -2821,15 +3007,27 @@ function TallyApp({ user }: { user: UserInfo }) {
                         </div>
 
                         <div className="flex flex-col gap-4 md:gap-5 w-full items-center">
-                          <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
-                            {COLORS.map((color) => (
+                          <div className="flex flex-col items-center gap-2 w-full">
+                            <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
+                              {COLORS.map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => updateTallyColor(tally.id, color)}
+                                  className={`w-8 h-8 md:w-10 md:h-10 rounded-full transition-all ${tally.color === color ? 'ring-2 ring-offset-2 md:ring-offset-3 ring-primary scale-110' : 'hover:scale-105'}`}
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
                               <button
-                                key={color}
-                                onClick={() => updateTallyColor(tally.id, color)}
-                                className={`w-8 h-8 md:w-10 md:h-10 rounded-full transition-all ${tally.color === color ? 'ring-2 ring-offset-2 md:ring-offset-3 ring-primary scale-110' : 'hover:scale-105'}`}
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
+                                onClick={() => {
+                                  setColorPickerTallyId(tally.id)
+                                  setColorPickerOpen(true)
+                                }}
+                                className="w-8 h-8 md:w-10 md:h-10 rounded-full transition-all hover:scale-105 bg-gradient-to-br from-red-400 via-green-400 to-blue-400 flex items-center justify-center"
+                                title="Custom color"
+                              >
+                                <Palette size={16} weight="bold" className="text-white drop-shadow-sm" />
+                              </button>
+                            </div>
                           </div>
 
                           <Select
@@ -3165,6 +3363,18 @@ function TallyApp({ user }: { user: UserInfo }) {
           />
         )}
       </AnimatePresence>
+
+      <ColorPickerDialog
+        open={colorPickerOpen}
+        onOpenChange={setColorPickerOpen}
+        currentColor={colorPickerTallyId ? currentTallies.find(t => t.id === colorPickerTallyId)?.color || COLORS[0] : COLORS[0]}
+        onColorSelect={(color) => {
+          if (colorPickerTallyId) {
+            updateTallyColor(colorPickerTallyId, color)
+          }
+          setColorPickerTallyId(null)
+        }}
+      />
     </div>
   )
 }
