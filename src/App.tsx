@@ -1333,7 +1333,7 @@ function RunningMousePat({ legPhase }: { legPhase: number }) {
   const caterpillarWiggle = Math.sin(legPhase * 0.8) * 2
   
   return (
-    <svg viewBox="0 0 60 50" className="w-full h-full">
+    <svg viewBox="-5 0 65 50" className="w-full h-full">
       <g transform={`translate(0, ${-bodyBob})`}>
         <g transform={`translate(${caterpillarWiggle * 0.5}, 0)`}>
           <ellipse cx="44" cy="46" rx="5" ry="4" fill="white" fillOpacity="0.75" />
