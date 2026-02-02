@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { isNativePlatform, useStorage, useDeviceUserId } from '@/hooks/use-storage'
 
 interface TallyEvent {
   tallyId: string
@@ -43,10 +44,25 @@ interface UserInfo {
 
 function useCurrentUser() {
   const [user, setUser] = useState<UserInfo | null>(null)
+  const deviceUserId = useDeviceUserId()
   
   useEffect(() => {
-    spark.user().then(setUser)
-  }, [])
+    if (isNativePlatform()) {
+      // On native platforms, create a local user based on device ID
+      if (deviceUserId) {
+        setUser({
+          id: deviceUserId,
+          login: 'Local User',
+          avatarUrl: '',
+          email: '',
+          isOwner: true,
+        })
+      }
+    } else {
+      // On Spark/web, use the GitHub user
+      spark.user().then(setUser)
+    }
+  }, [deviceUserId])
   
   return user
 }
@@ -2527,10 +2543,34 @@ function GoalCelebration({
 }
 
 function TallyApp({ user }: { user: UserInfo }) {
-  const [tallies, setTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
-  const [purchasedAnimals, setPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
-  const [tallyEvents, setTallyEvents] = useKV<TallyEvent[]>(`tally-events-${user.id}`, [])
-  const [dailyTallyNotes, setDailyTallyNotes] = useKV<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
+  // Platform-aware storage: use native storage on mobile, Spark KV on web
+  const isNative = isNativePlatform()
+  
+  // Spark KV hooks (only active on web)
+  const [sparkTallies, setSparkTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
+  const [sparkPurchasedAnimals, setSparkPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
+  const [sparkTallyEvents, setSparkTallyEvents] = useKV<TallyEvent[]>(`tally-events-${user.id}`, [])
+  const [sparkDailyTallyNotes, setSparkDailyTallyNotes] = useKV<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
+  
+  // Native storage hooks (only active on mobile)
+  const [nativeTallies, setNativeTallies, nativeTalliesLoaded] = useStorage<Tally[]>(`tallies-${user.id}`, [])
+  const [nativePurchasedAnimals, setNativePurchasedAnimals, nativePurchasedLoaded] = useStorage<number[]>(`purchased-animals-${user.id}`, [])
+  const [nativeTallyEvents, setNativeTallyEvents, nativeEventsLoaded] = useStorage<TallyEvent[]>(`tally-events-${user.id}`, [])
+  const [nativeDailyTallyNotes, setNativeDailyTallyNotes, nativeNotesLoaded] = useStorage<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
+  
+  // Select the appropriate storage based on platform
+  const tallies = isNative ? nativeTallies : sparkTallies
+  const setTallies = isNative ? setNativeTallies : setSparkTallies
+  const purchasedAnimals = isNative ? nativePurchasedAnimals : sparkPurchasedAnimals
+  const setPurchasedAnimals = isNative ? setNativePurchasedAnimals : setSparkPurchasedAnimals
+  const tallyEvents = isNative ? nativeTallyEvents : sparkTallyEvents
+  const setTallyEvents = isNative ? setNativeTallyEvents : setSparkTallyEvents
+  const dailyTallyNotes = isNative ? nativeDailyTallyNotes : sparkDailyTallyNotes
+  const setDailyTallyNotes = isNative ? setNativeDailyTallyNotes : setSparkDailyTallyNotes
+  
+  // Check if native storage is loaded
+  const nativeStorageLoaded = !isNative || (nativeTalliesLoaded && nativePurchasedLoaded && nativeEventsLoaded && nativeNotesLoaded)
+  
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -2581,14 +2621,14 @@ function TallyApp({ user }: { user: UserInfo }) {
   )
 
   useEffect(() => {
-    if (tallies !== undefined) {
+    if (tallies !== undefined && nativeStorageLoaded) {
       setIsLoaded(true)
       const timer = setTimeout(() => {
         setShowNewButton(true)
       }, 200)
       return () => clearTimeout(timer)
     }
-  }, [tallies])
+  }, [tallies, nativeStorageLoaded])
 
   useEffect(() => {
     return () => {
