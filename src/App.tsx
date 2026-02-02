@@ -3019,14 +3019,7 @@ function TallyApp({ user }: { user: UserInfo }) {
             </Button>
           </div>
           
-          <div className="flex items-center justify-center gap-2 pt-1">
-            <img 
-              src={user.avatarUrl} 
-              alt={user.login}
-              className="w-5 h-5 rounded-full"
-            />
-            <span className="text-xs text-muted-foreground">{user.login}'s tallies</span>
-          </div>
+
           {nextUnlock && (
             <div className="pt-2">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/70 rounded-full text-sm">
