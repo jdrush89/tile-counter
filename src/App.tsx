@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette } from '@phosphor-icons/react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
@@ -2547,11 +2548,61 @@ function GoalCelebration({
   )
 }
 
-function TallyApp({ user }: { user: UserInfo }) {
-  // Platform-aware storage: use native storage on mobile, Spark KV on web
+type ThemeMode = 'light' | 'dark'
+
+function useTheme() {
+  const isNative = isNativePlatform()
+  const [sparkTheme, setSparkTheme] = useKV<ThemeMode>('theme-mode', 'dark')
+  const [nativeTheme, setNativeTheme, nativeThemeLoaded] = useStorage<ThemeMode>('theme-mode', 'dark')
+  
+  const theme = isNative ? nativeTheme : sparkTheme
+  const setTheme = isNative ? setNativeTheme : setSparkTheme
+  const isLoaded = !isNative || nativeThemeLoaded
+  
+  useEffect(() => {
+    if (!isLoaded) return
+    const root = document.documentElement
+    if (theme === 'dark') {
+      root.classList.add('dark')
+      root.classList.remove('light')
+    } else {
+      root.classList.add('light')
+      root.classList.remove('dark')
+    }
+  }, [theme, isLoaded])
+  
+  return { theme: theme ?? 'dark', setTheme, isLoaded }
+}
+
+function SettingsMenu({ theme, setTheme }: { theme: ThemeMode; setTheme: (theme: ThemeMode) => void }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="absolute top-4 right-4 z-10">
+          <GearSix size={24} weight="bold" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel>Settings</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="flex items-center justify-between cursor-pointer"
+        >
+          <span className="flex items-center gap-2">
+            {theme === 'dark' ? <Moon size={18} weight="bold" /> : <Sun size={18} weight="bold" />}
+            Theme
+          </span>
+          <span className="text-xs text-muted-foreground capitalize">{theme}</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode; setTheme: (theme: ThemeMode) => void }) {
   const isNative = isNativePlatform()
   
-  // Spark KV hooks (only active on web)
   const [sparkTallies, setSparkTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
   const [sparkPurchasedAnimals, setSparkPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
   const [sparkTallyEvents, setSparkTallyEvents] = useKV<TallyEvent[]>(`tally-events-${user.id}`, [])
@@ -3005,6 +3056,7 @@ function TallyApp({ user }: { user: UserInfo }) {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <SettingsMenu theme={theme} setTheme={setTheme} />
       <div 
         className="fixed inset-0 opacity-[0.08] pointer-events-none"
         style={{
@@ -3555,8 +3607,9 @@ function TallyApp({ user }: { user: UserInfo }) {
 
 function App() {
   const user = useCurrentUser()
+  const { theme, setTheme, isLoaded: themeLoaded } = useTheme()
 
-  if (!user) {
+  if (!user || !themeLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -3569,7 +3622,7 @@ function App() {
 
   return (
     <>
-      <TallyApp user={user} />
+      <TallyApp user={user} theme={theme} setTheme={setTheme} />
       <Toaster position="top-center" />
     </>
   )
