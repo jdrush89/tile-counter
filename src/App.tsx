@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { isNativePlatform, useStorage, useDeviceUserId } from '@/hooks/use-storage'
+import { isNativePlatform, useStorage, useDeviceUserId, getPlatform } from '@/hooks/use-storage'
+import { usePurchases } from '@/hooks/use-purchases'
 
 interface TallyEvent {
   tallyId: string
@@ -279,16 +280,16 @@ const UNLOCKABLE_ANIMALS = [
 ]
 
 const PREMIUM_ANIMALS = [
-  { id: 9, name: 'Griffin', price: 2.99 },
-  { id: 10, name: 'Cthulhu', price: 3.99 },
-  { id: 13, name: 'Sasquatch', price: 4.99 },
-  { id: 14, name: 'Lizard King', price: 5.99 },
-  { id: 15, name: 'Zombie', price: 3.49 },
-  { id: 16, name: 'T-Rex', price: 4.49 },
-  { id: 18, name: 'Anglerfish', price: 3.99 },
-  { id: 19, name: 'Shark', price: 3.99 },
-  { id: 20, name: 'Whale', price: 100 },
-  { id: 21, name: 'Mouse Pat', price: 3.99 },
+  { id: 9, name: 'Griffin', price: 1.99 },
+  { id: 10, name: 'Cthulhu', price: 2.99 },
+  { id: 13, name: 'Sasquatch', price: 3.99 },
+  { id: 14, name: 'Lizard King', price: 4.99 },
+  { id: 15, name: 'Zombie', price: 2.49 },
+  { id: 16, name: 'T-Rex', price: 3.49 },
+  { id: 18, name: 'Anglerfish', price: 2.99 },
+  { id: 19, name: 'Shark', price: 2.99 },
+  { id: 20, name: 'Whale', price: 3.99 },
+  { id: 21, name: 'Mouse Pat', price: 2.99 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
@@ -2596,6 +2597,9 @@ function TallyApp({ user }: { user: UserInfo }) {
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const [colorPickerTallyId, setColorPickerTallyId] = useState<string | null>(null)
   const isMobile = useIsMobile()
+  
+  // In-app purchases hook
+  const { isPurchasing, purchaseAnimal, restorePurchases } = usePurchases()
 
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
@@ -2798,21 +2802,54 @@ function TallyApp({ user }: { user: UserInfo }) {
     updateTallyAnimal(tallyId, animalId)
   }
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (!animalToPurchase) return
     
-    setPurchasedAnimals((current) => [...(current ?? []), animalToPurchase.id])
+    // Use the purchase system (fake on web, real on native)
+    const result = await purchaseAnimal(
+      animalToPurchase.id, 
+      animalToPurchase.name, 
+      animalToPurchase.price
+    )
     
-    if (purchaseTallyId) {
-      updateTallyAnimal(purchaseTallyId, animalToPurchase.id)
+    if (result.success) {
+      setPurchasedAnimals((current) => [...(current ?? []), animalToPurchase.id])
+      
+      if (purchaseTallyId) {
+        updateTallyAnimal(purchaseTallyId, animalToPurchase.id)
+      }
+      
+      toast.success(`${animalToPurchase.name} purchased!`, {
+        description: 'You can now use this animal on any tally tile.',
+      })
+    } else {
+      // Only show error if it wasn't a cancellation
+      if (result.error && result.error !== 'Purchase cancelled') {
+        toast.error('Purchase failed', {
+          description: result.error,
+        })
+      }
     }
     
-    toast.success(`${animalToPurchase.name} purchased!`, {
-      description: 'You can now use this animal on any tally tile.',
-    })
     setPurchaseDialogOpen(false)
     setAnimalToPurchase(null)
     setPurchaseTallyId(null)
+  }
+  
+  const handleRestorePurchases = async () => {
+    toast.loading('Restoring purchases...')
+    const restoredIds = await restorePurchases()
+    
+    if (restoredIds.length > 0) {
+      setPurchasedAnimals((current) => {
+        const existing = current ?? []
+        const newIds = restoredIds.filter(id => !existing.includes(id))
+        return [...existing, ...newIds]
+      })
+      toast.success(`Restored ${restoredIds.length} purchase(s)!`)
+    } else {
+      toast.info('No purchases to restore')
+    }
   }
 
   const deleteTally = (id: string) => {
@@ -3392,7 +3429,7 @@ function TallyApp({ user }: { user: UserInfo }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
+      <Dialog open={purchaseDialogOpen} onOpenChange={(open) => !isPurchasing && setPurchaseDialogOpen(open)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -3418,25 +3455,54 @@ function TallyApp({ user }: { user: UserInfo }) {
               <div className="text-center space-y-1">
                 <h3 className="text-xl font-semibold">{animalToPurchase.name}</h3>
                 <p className="text-2xl font-bold text-primary">${animalToPurchase.price.toFixed(2)}</p>
+                {isNative && (
+                  <p className="text-xs text-muted-foreground">
+                    Payment processed securely via {getPlatform() === 'android' ? 'Google Play' : 'App Store'}
+                  </p>
+                )}
               </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setPurchaseDialogOpen(false)
-                    setAnimalToPurchase(null)
-                    setPurchaseTallyId(null)
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handlePurchase}
-                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                >
-                  <CurrencyDollar size={16} weight="bold" className="mr-1" />
-                  Purchase
-                </Button>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={isPurchasing}
+                    onClick={() => {
+                      setPurchaseDialogOpen(false)
+                      setAnimalToPurchase(null)
+                      setPurchaseTallyId(null)
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handlePurchase}
+                    disabled={isPurchasing}
+                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                  >
+                    {isPurchasing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CurrencyDollar size={16} weight="bold" className="mr-1" />
+                        Purchase
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {isNative && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-muted-foreground"
+                    onClick={handleRestorePurchases}
+                    disabled={isPurchasing}
+                  >
+                    Restore previous purchases
+                  </Button>
+                )}
               </div>
             </div>
           )}
