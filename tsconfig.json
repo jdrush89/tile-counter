@@ -28,6 +28,8 @@
     },
   },
   "include": [
-    "src"
+    "src",
+    "src/vite-env.d.ts",
+    "src/vite-end.d.ts"
   ]
 }

@@ -1,49 +1,77 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Capacitor } from '@capacitor/core'
-import { Preferences } from '@capacitor/preferences'
 
-// Check if we're running in a native app context
+declare const spark: {
+  user: () => Promise<any>
+  kv: {
+    keys: () => Promise<string[]>
+    get: <T>(key: string) => Promise<T | undefined>
+    set: <T>(key: string, value: T) => Promise<void>
+    delete: (key: string) => Promise<void>
+  }
+}
+
+let Capacitor: any = null
+let Preferences: any = null
+
+const loadCapacitor = async () => {
+  if (Capacitor !== null) return { Capacitor, Preferences }
+  try {
+    const capacitorCore = await import('@capacitor/core')
+    const capacitorPrefs = await import('@capacitor/preferences')
+    Capacitor = capacitorCore.Capacitor
+    Preferences = capacitorPrefs.Preferences
+    return { Capacitor, Preferences }
+  } catch {
+    return { Capacitor: null, Preferences: null }
+  }
+}
+
 export const isNativePlatform = () => {
-  return Capacitor.isNativePlatform()
+  try {
+    if (Capacitor && typeof Capacitor.isNativePlatform === 'function') {
+      return Capacitor.isNativePlatform()
+    }
+  } catch {
+    return false
+  }
+  return false
 }
 
-// Check if we're running in Spark (web) context  
 export const isSparkPlatform = () => {
-  return !Capacitor.isNativePlatform() && typeof spark !== 'undefined'
+  return !isNativePlatform() && typeof spark !== 'undefined'
 }
 
-// Get the current platform name
 export const getPlatform = () => {
-  if (Capacitor.isNativePlatform()) {
-    return Capacitor.getPlatform() // 'android' | 'ios'
+  try {
+    if (Capacitor && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform()) {
+      return Capacitor.getPlatform()
+    }
+  } catch {
+    return 'web'
   }
   return 'web'
 }
 
-/**
- * A universal storage hook that works both in Spark (web) and native mobile apps.
- * - In Spark: Uses the spark KV store tied to the user's GitHub account
- * - In Native (Android/iOS): Uses Capacitor Preferences for local device storage
- */
 export function useStorage<T>(
   key: string,
   defaultValue: T
 ): [T | undefined, (value: T | ((prev: T | undefined) => T)) => void, boolean] {
   const [value, setValue] = useState<T | undefined>(undefined)
   const [isLoaded, setIsLoaded] = useState(false)
-  const isNative = isNativePlatform()
+  const [isNative, setIsNative] = useState(false)
   
-  // Keep track of the latest value for the setter callback
   const valueRef = useRef<T | undefined>(value)
   valueRef.current = value
 
-  // Load initial value
   useEffect(() => {
     const loadValue = async () => {
-      if (isNative) {
-        // Native platform: use Capacitor Preferences
+      const { Capacitor: cap, Preferences: prefs } = await loadCapacitor()
+      const native = cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()
+      setIsNative(native)
+      
+      if (native && prefs) {
         try {
-          const result = await Preferences.get({ key })
+          const result = await prefs.get({ key })
           if (result.value !== null) {
             setValue(JSON.parse(result.value) as T)
           } else {
@@ -54,17 +82,14 @@ export function useStorage<T>(
           setValue(defaultValue)
         }
       } else {
-        // Spark platform: we'll let the component use useKV directly
-        // This hook is mainly for native, but we provide a fallback
         setValue(defaultValue)
       }
       setIsLoaded(true)
     }
 
     loadValue()
-  }, [key, isNative]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key])
 
-  // Setter function
   const setStoredValue = useCallback(
     (newValue: T | ((prev: T | undefined) => T)) => {
       const resolvedValue = typeof newValue === 'function'
@@ -73,12 +98,11 @@ export function useStorage<T>(
 
       setValue(resolvedValue)
 
-      if (isNative) {
-        // Save to Capacitor Preferences
+      if (isNative && Preferences) {
         Preferences.set({
           key,
           value: JSON.stringify(resolvedValue),
-        }).catch((error) => {
+        }).catch((error: any) => {
           console.error('Error saving to Preferences:', error)
         })
       }
@@ -89,33 +113,30 @@ export function useStorage<T>(
   return [value, setStoredValue, isLoaded]
 }
 
-/**
- * Hook to get a device-specific user ID for native platforms.
- * This provides a consistent identifier for storing user data locally.
- */
 export function useDeviceUserId(): string | null {
   const [deviceId, setDeviceId] = useState<string | null>(null)
 
   useEffect(() => {
     const getOrCreateDeviceId = async () => {
-      if (!isNativePlatform()) {
+      const { Capacitor: cap, Preferences: prefs } = await loadCapacitor()
+      const native = cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()
+      
+      if (!native || !prefs) {
         setDeviceId(null)
         return
       }
 
       try {
-        const result = await Preferences.get({ key: 'device-user-id' })
+        const result = await prefs.get({ key: 'device-user-id' })
         if (result.value) {
           setDeviceId(result.value)
         } else {
-          // Generate a new device ID
           const newId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          await Preferences.set({ key: 'device-user-id', value: newId })
+          await prefs.set({ key: 'device-user-id', value: newId })
           setDeviceId(newId)
         }
       } catch (error) {
         console.error('Error getting device ID:', error)
-        // Fallback to a session-based ID
         setDeviceId(`session-${Date.now()}`)
       }
     }
@@ -126,23 +147,24 @@ export function useDeviceUserId(): string | null {
   return deviceId
 }
 
-/**
- * Combined hook that provides the appropriate storage mechanism
- * based on the platform (Spark vs Native).
- */
 export function usePlatformStorage<T>(
   sparkKey: string,
   defaultValue: T,
   sparkHook?: [T | undefined, (value: T | ((prev: T | undefined) => T)) => void]
 ): [T | undefined, (value: T | ((prev: T | undefined) => T)) => void, boolean] {
-  const isNative = isNativePlatform()
   const [nativeValue, setNativeValue, nativeLoaded] = useStorage<T>(sparkKey, defaultValue)
+  const [isNative, setIsNative] = useState(false)
+
+  useEffect(() => {
+    loadCapacitor().then(({ Capacitor: cap }) => {
+      setIsNative(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform())
+    })
+  }, [])
 
   if (isNative) {
     return [nativeValue, setNativeValue, nativeLoaded]
   }
 
-  // For Spark, use the provided hook or return defaults
   if (sparkHook) {
     return [sparkHook[0], sparkHook[1], true]
   }

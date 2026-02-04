@@ -13,6 +13,10 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { isNativePlatform, useStorage, useDeviceUserId, getPlatform } from '@/hooks/use-storage'
 import { usePurchases } from '@/hooks/use-purchases'
 
+declare const spark: {
+  user: () => Promise<UserInfo>
+}
+
 interface TallyEvent {
   tallyId: string
   timestamp: number
