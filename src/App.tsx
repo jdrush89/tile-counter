@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon, Camera, DownloadSimple, UploadSimple, FloppyDisk } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { isNativePlatform, useStorage, useDeviceUserId, getPlatform } from '@/hooks/use-storage'
 import { usePurchases } from '@/hooks/use-purchases'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 declare const spark: {
   user: () => Promise<UserInfo>
@@ -2550,6 +2551,303 @@ function GoalCelebration({
 
 type ThemeMode = 'light' | 'dark'
 
+interface Snapshot {
+  id: string
+  name: string
+  createdAt: number
+  data: {
+    tallies: Tally[]
+    purchasedAnimals: number[]
+    tallyEvents: TallyEvent[]
+    dailyTallyNotes: DailyTallyNote[]
+  }
+}
+
+interface AppData {
+  tallies: Tally[]
+  purchasedAnimals: number[]
+  tallyEvents: TallyEvent[]
+  dailyTallyNotes: DailyTallyNote[]
+}
+
+function SnapshotsDialog({
+  open,
+  onOpenChange,
+  currentData,
+  onRestoreSnapshot,
+  userId,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  currentData: AppData
+  onRestoreSnapshot: (data: AppData) => void
+  userId: string
+}) {
+  const isNative = isNativePlatform()
+  const [sparkSnapshots, setSparkSnapshots] = useKV<Snapshot[]>(`snapshots-${userId}`, [])
+  const [nativeSnapshots, setNativeSnapshots, nativeLoaded] = useStorage<Snapshot[]>(`snapshots-${userId}`, [])
+  
+  const snapshots = isNative ? nativeSnapshots : sparkSnapshots
+  const setSnapshots = isNative ? setNativeSnapshots : setSparkSnapshots
+  const currentSnapshots = snapshots ?? []
+  
+  const [newSnapshotName, setNewSnapshotName] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const saveSnapshot = () => {
+    const name = newSnapshotName.trim() || `Snapshot ${currentSnapshots.length + 1}`
+    const snapshot: Snapshot = {
+      id: Date.now().toString(),
+      name,
+      createdAt: Date.now(),
+      data: currentData,
+    }
+    setSnapshots((prev) => [...(prev ?? []), snapshot])
+    setNewSnapshotName('')
+    toast.success(`Snapshot "${name}" saved`)
+  }
+
+  const deleteSnapshot = (id: string) => {
+    setSnapshots((prev) => (prev ?? []).filter((s) => s.id !== id))
+    setConfirmDeleteId(null)
+    toast.success('Snapshot deleted')
+  }
+
+  const restoreSnapshot = (snapshot: Snapshot) => {
+    onRestoreSnapshot(snapshot.data)
+    onOpenChange(false)
+    toast.success(`Restored "${snapshot.name}"`)
+  }
+
+  const exportSnapshot = (snapshot: Snapshot) => {
+    const dataStr = JSON.stringify(snapshot, null, 2)
+    const blob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${snapshot.name.replace(/[^a-z0-9]/gi, '_')}_${new Date(snapshot.createdAt).toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success(`Exported "${snapshot.name}"`)
+  }
+
+  const exportCurrentState = () => {
+    const snapshot: Snapshot = {
+      id: Date.now().toString(),
+      name: 'Current State',
+      createdAt: Date.now(),
+      data: currentData,
+    }
+    exportSnapshot(snapshot)
+  }
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string
+        const imported = JSON.parse(content)
+        
+        if (imported.data && imported.data.tallies) {
+          const snapshot: Snapshot = {
+            id: Date.now().toString(),
+            name: imported.name || `Imported ${new Date().toLocaleDateString()}`,
+            createdAt: Date.now(),
+            data: {
+              tallies: imported.data.tallies || [],
+              purchasedAnimals: imported.data.purchasedAnimals || [],
+              tallyEvents: imported.data.tallyEvents || [],
+              dailyTallyNotes: imported.data.dailyTallyNotes || [],
+            },
+          }
+          setSnapshots((prev) => [...(prev ?? []), snapshot])
+          toast.success(`Imported "${snapshot.name}"`)
+        } else if (imported.tallies) {
+          const snapshot: Snapshot = {
+            id: Date.now().toString(),
+            name: `Imported ${new Date().toLocaleDateString()}`,
+            createdAt: Date.now(),
+            data: {
+              tallies: imported.tallies || [],
+              purchasedAnimals: imported.purchasedAnimals || [],
+              tallyEvents: imported.tallyEvents || [],
+              dailyTallyNotes: imported.dailyTallyNotes || [],
+            },
+          }
+          setSnapshots((prev) => [...(prev ?? []), snapshot])
+          toast.success(`Imported "${snapshot.name}"`)
+        } else {
+          toast.error('Invalid snapshot file format')
+        }
+      } catch {
+        toast.error('Failed to parse snapshot file')
+      }
+    }
+    reader.readAsText(file)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Camera size={20} className="text-primary" weight="bold" />
+            Snapshots
+          </DialogTitle>
+          <DialogDescription>
+            Save, export, and restore your tally data.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Snapshot name (optional)"
+              value={newSnapshotName}
+              onChange={(e) => setNewSnapshotName(e.target.value)}
+              className="flex-1"
+            />
+            <Button onClick={saveSnapshot} className="gap-1.5">
+              <FloppyDisk size={16} weight="bold" />
+              Save
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={exportCurrentState}
+              className="flex-1 gap-1.5"
+            >
+              <DownloadSimple size={16} weight="bold" />
+              Export Current
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 gap-1.5"
+            >
+              <UploadSimple size={16} weight="bold" />
+              Import
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 mt-4">
+          <div className="text-sm font-medium text-muted-foreground mb-2">
+            Saved Snapshots ({currentSnapshots.length})
+          </div>
+          {currentSnapshots.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              No snapshots saved yet
+            </div>
+          ) : (
+            <ScrollArea className="h-[280px] pr-3">
+              <div className="space-y-2">
+                {currentSnapshots
+                  .slice()
+                  .sort((a, b) => b.createdAt - a.createdAt)
+                  .map((snapshot) => (
+                    <div
+                      key={snapshot.id}
+                      className="p-3 rounded-lg border border-border bg-card/50 space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-foreground truncate">
+                            {snapshot.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatDate(snapshot.createdAt)}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {snapshot.data.tallies.length} tallies • {snapshot.data.tallyEvents.length} events
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => restoreSnapshot(snapshot)}
+                          className="h-7 text-xs gap-1"
+                        >
+                          <UploadSimple size={12} weight="bold" />
+                          Restore
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => exportSnapshot(snapshot)}
+                          className="h-7 text-xs gap-1"
+                        >
+                          <DownloadSimple size={12} weight="bold" />
+                          Export
+                        </Button>
+                        {confirmDeleteId === snapshot.id ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteSnapshot(snapshot.id)}
+                              className="h-7 text-xs"
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="h-7 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setConfirmDeleteId(snapshot.id)}
+                            className="h-7 text-xs text-destructive hover:text-destructive"
+                          >
+                            <Trash size={12} weight="bold" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function useTheme() {
   const isNative = isNativePlatform()
   const [sparkTheme, setSparkTheme] = useKV<ThemeMode>('theme-mode', 'dark')
@@ -2574,7 +2872,15 @@ function useTheme() {
   return { theme: theme ?? 'dark', setTheme, isLoaded }
 }
 
-function SettingsMenu({ theme, setTheme }: { theme: ThemeMode; setTheme: (theme: ThemeMode) => void }) {
+function SettingsMenu({ 
+  theme, 
+  setTheme,
+  onOpenSnapshots,
+}: { 
+  theme: ThemeMode
+  setTheme: (theme: ThemeMode) => void
+  onOpenSnapshots: () => void
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -2594,6 +2900,13 @@ function SettingsMenu({ theme, setTheme }: { theme: ThemeMode; setTheme: (theme:
             Theme
           </span>
           <span className="text-xs text-muted-foreground capitalize">{theme}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={onOpenSnapshots}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <Camera size={18} weight="bold" />
+          Snapshots
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -2651,6 +2964,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   const [goalCelebration, setGoalCelebration] = useState<{ tally: Tally; goal: number } | null>(null)
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const [colorPickerTallyId, setColorPickerTallyId] = useState<string | null>(null)
+  const [snapshotsDialogOpen, setSnapshotsDialogOpen] = useState(false)
   const isMobile = useIsMobile()
   
   // In-app purchases hook
@@ -3054,9 +3368,16 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
     })
   }
 
+  const handleRestoreSnapshot = (data: AppData) => {
+    setTallies(data.tallies)
+    setPurchasedAnimals(data.purchasedAnimals)
+    setTallyEvents(data.tallyEvents)
+    setDailyTallyNotes(data.dailyTallyNotes)
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <SettingsMenu theme={theme} setTheme={setTheme} />
+      <SettingsMenu theme={theme} setTheme={setTheme} onOpenSnapshots={() => setSnapshotsDialogOpen(true)} />
       <div 
         className="fixed inset-0 opacity-[0.08] pointer-events-none"
         style={{
@@ -3600,6 +3921,19 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
           }
           setColorPickerTallyId(null)
         }}
+      />
+
+      <SnapshotsDialog
+        open={snapshotsDialogOpen}
+        onOpenChange={setSnapshotsDialogOpen}
+        currentData={{
+          tallies: currentTallies,
+          purchasedAnimals: currentPurchased,
+          tallyEvents: currentEvents,
+          dailyTallyNotes: currentDailyNotes,
+        }}
+        onRestoreSnapshot={handleRestoreSnapshot}
+        userId={user.id}
       />
     </div>
   )
