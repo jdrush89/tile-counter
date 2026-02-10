@@ -31,11 +31,16 @@ interface UsePurchasesReturn {
   restorePurchases: () => Promise<number[]>
 }
 
+const isCapacitorEnvironment = () => {
+  if (typeof window === 'undefined') return false
+  return !!(window as any).Capacitor
+}
+
 export function usePurchases(): UsePurchasesReturn {
   const [isInitialized, setIsInitialized] = useState(false)
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [isNative, setIsNative] = useState(false)
-  const [platform, setPlatform] = useState('web')
+  const [, setPlatform] = useState('web')
 
   useEffect(() => {
     const initializePurchases = async () => {
@@ -44,7 +49,7 @@ export function usePurchases(): UsePurchasesReturn {
       setIsNative(native)
       setPlatform(plat)
 
-      if (!native) {
+      if (!native || !isCapacitorEnvironment()) {
         setIsInitialized(true)
         return
       }
@@ -81,7 +86,7 @@ export function usePurchases(): UsePurchasesReturn {
     setIsPurchasing(true)
 
     try {
-      if (!isNative) {
+      if (!isNative || !isCapacitorEnvironment()) {
         await new Promise(resolve => setTimeout(resolve, 500))
         setIsPurchasing(false)
         return { success: true }
@@ -167,7 +172,7 @@ export function usePurchases(): UsePurchasesReturn {
   }, [isNative])
 
   const restorePurchases = useCallback(async (): Promise<number[]> => {
-    if (!isNative) {
+    if (!isNative || !isCapacitorEnvironment()) {
       return []
     }
 

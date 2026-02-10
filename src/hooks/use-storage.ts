@@ -12,21 +12,46 @@ declare const spark: {
 
 let Capacitor: any = null
 let Preferences: any = null
+let capacitorLoadAttempted = false
+let capacitorLoadPromise: Promise<{ Capacitor: any; Preferences: any }> | null = null
 
-const loadCapacitor = async () => {
-  if (Capacitor !== null) return { Capacitor, Preferences }
-  try {
-    const capacitorCore = await import('@capacitor/core')
-    const capacitorPrefs = await import('@capacitor/preferences')
-    Capacitor = capacitorCore.Capacitor
-    Preferences = capacitorPrefs.Preferences
+const isCapacitorEnvironment = () => {
+  if (typeof window === 'undefined') return false
+  return !!(window as any).Capacitor
+}
+
+const loadCapacitor = async (): Promise<{ Capacitor: any; Preferences: any }> => {
+  if (capacitorLoadAttempted) {
     return { Capacitor, Preferences }
-  } catch {
-    return { Capacitor: null, Preferences: null }
   }
+  
+  if (capacitorLoadPromise) {
+    return capacitorLoadPromise
+  }
+  
+  capacitorLoadPromise = (async () => {
+    capacitorLoadAttempted = true
+    
+    if (!isCapacitorEnvironment()) {
+      return { Capacitor: null, Preferences: null }
+    }
+    
+    try {
+      const capacitorCore = await import('@capacitor/core')
+      const capacitorPrefs = await import('@capacitor/preferences')
+      Capacitor = capacitorCore.Capacitor
+      Preferences = capacitorPrefs.Preferences
+      return { Capacitor, Preferences }
+    } catch {
+      return { Capacitor: null, Preferences: null }
+    }
+  })()
+  
+  return capacitorLoadPromise
 }
 
 export const isNativePlatform = () => {
+  if (!isCapacitorEnvironment()) return false
   try {
     if (Capacitor && typeof Capacitor.isNativePlatform === 'function') {
       return Capacitor.isNativePlatform()
@@ -42,6 +67,7 @@ export const isSparkPlatform = () => {
 }
 
 export const getPlatform = () => {
+  if (!isCapacitorEnvironment()) return 'web'
   try {
     if (Capacitor && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform()) {
       return Capacitor.getPlatform()
