@@ -2623,15 +2623,36 @@ function SnapshotsDialog({
   const exportSnapshot = (snapshot: Snapshot) => {
     const dataStr = JSON.stringify(snapshot, null, 2)
     const blob = new Blob([dataStr], { type: 'application/json' })
+    const filename = `${snapshot.name.replace(/[^a-z0-9]/gi, '_')}_${new Date(snapshot.createdAt).toISOString().split('T')[0]}.json`
+    
+    if (typeof navigator !== 'undefined' && navigator.share && /mobile/i.test(navigator.userAgent)) {
+      const file = new File([blob], filename, { type: 'application/json' })
+      navigator.share({ files: [file], title: snapshot.name }).catch(() => {
+        fallbackDownload(blob, filename)
+      })
+    } else {
+      fallbackDownload(blob, filename)
+    }
+    toast.success(`Exported "${snapshot.name}"`)
+  }
+
+  const fallbackDownload = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${snapshot.name.replace(/[^a-z0-9]/gi, '_')}_${new Date(snapshot.createdAt).toISOString().split('T')[0]}.json`
+    link.download = filename
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    link.style.display = 'none'
     document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    toast.success(`Exported "${snapshot.name}"`)
+    
+    setTimeout(() => {
+      link.click()
+      setTimeout(() => {
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      }, 100)
+    }, 0)
   }
 
   const exportCurrentState = () => {
