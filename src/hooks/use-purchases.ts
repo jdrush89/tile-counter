@@ -55,7 +55,14 @@ export function usePurchases(): UsePurchasesReturn {
       }
 
       try {
-        const { Purchases } = await import('@revenuecat/purchases-capacitor')
+        const windowCapacitor = (window as any).Capacitor
+        const Purchases = windowCapacitor?.Plugins?.Purchases
+        
+        if (!Purchases) {
+          console.log('RevenueCat plugin not available')
+          setIsInitialized(true)
+          return
+        }
         
         const apiKey = plat === 'android' 
           ? REVENUECAT_API_KEYS.android 
@@ -92,7 +99,14 @@ export function usePurchases(): UsePurchasesReturn {
         return { success: true }
       }
 
-      const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      const windowCapacitor = (window as any).Capacitor
+      const Purchases = windowCapacitor?.Plugins?.Purchases
+      
+      if (!Purchases) {
+        setIsPurchasing(false)
+        return { success: false, error: 'Purchase system not available' }
+      }
+      
       const productId = PRODUCT_IDS[animalId]
 
       if (!productId) {
@@ -177,7 +191,13 @@ export function usePurchases(): UsePurchasesReturn {
     }
 
     try {
-      const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      const windowCapacitor = (window as any).Capacitor
+      const Purchases = windowCapacitor?.Plugins?.Purchases
+      
+      if (!Purchases) {
+        return []
+      }
+      
       const customerInfo = await Purchases.restorePurchases()
       
       const purchasedAnimalIds: number[] = []

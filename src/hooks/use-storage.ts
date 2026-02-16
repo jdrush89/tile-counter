@@ -37,10 +37,14 @@ const loadCapacitor = async (): Promise<{ Capacitor: any; Preferences: any }> =>
     }
     
     try {
-      const capacitorCore = await import('@capacitor/core')
-      const capacitorPrefs = await import('@capacitor/preferences')
-      Capacitor = capacitorCore.Capacitor
-      Preferences = capacitorPrefs.Preferences
+      const windowCapacitor = (window as any).Capacitor
+      if (windowCapacitor) {
+        Capacitor = windowCapacitor
+        const plugins = windowCapacitor.Plugins
+        if (plugins && plugins.Preferences) {
+          Preferences = plugins.Preferences
+        }
+      }
       return { Capacitor, Preferences }
     } catch {
       return { Capacitor: null, Preferences: null }
