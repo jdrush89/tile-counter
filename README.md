@@ -17,13 +17,13 @@ Build the web and mobile assets at the site root:
 npm run build
 ```
 
-Build with the GitHub Pages project path:
+Build for the custom domain:
 
 ```bash
-VITE_BASE_PATH=/tile-counter/ npm run build
+VITE_BASE_PATH=/ npm run build
 ```
 
-Pushes to `main` deploy the Pages build to `https://jdrush89.github.io/tile-counter/`.
+Pushes to `main` deploy the Pages build to `https://bananatally.me/`. The deployment workflow reads the active Pages base path from GitHub so asset URLs remain correct if the domain configuration changes.
 
 Web data is local to each browser and origin. Use the snapshot export and import features to move data between the retired Spark deployment and GitHub Pages.
 
