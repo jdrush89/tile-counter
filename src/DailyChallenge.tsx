@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, CalendarBlank, Play, Trophy } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,6 +24,7 @@ interface AnimalRun {
 }
 
 interface DailyRound {
+  mode: 'single' | 'target' | 'total'
   number: number
   total: number
   target: DailyAnimal
@@ -132,10 +133,11 @@ function createDailyRounds(dateKey: string, animals: DailyAnimal[]) {
     }
 
     return {
+      mode: roundIndex === 0 ? 'single' : roundIndex === 1 ? 'target' : 'total',
       number: roundIndex + 1,
       total,
       target,
-      targetCount: counts.get(target.id) ?? 0,
+      targetCount: roundIndex === 2 ? total : counts.get(target.id) ?? 0,
       durationMs,
       runs,
     }
@@ -170,19 +172,34 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
   const [roundIndex, setRoundIndex] = useState(0)
   const [phase, setPhase] = useState<ChallengePhase>('intro')
   const [answer, setAnswer] = useState('')
+  const [trackedCount, setTrackedCount] = useState(0)
   const [scores, setScores] = useState<number[]>([])
+  const trackedCountRef = useRef(0)
   const round = rounds[roundIndex]
   const homeUrl = import.meta.env.BASE_URL
 
   useEffect(() => {
     if (phase !== 'running') return
-    const timer = window.setTimeout(() => setPhase('answer'), round.durationMs)
+    const timer = window.setTimeout(() => {
+      setAnswer(String(trackedCountRef.current))
+      setPhase('answer')
+    }, round.durationMs)
     return () => window.clearTimeout(timer)
   }, [phase, round.durationMs])
 
   const startRound = () => {
     setAnswer('')
+    trackedCountRef.current = 0
+    setTrackedCount(0)
     setPhase('running')
+  }
+
+  const incrementTrackedCount = () => {
+    setTrackedCount((current) => {
+      const next = current + 1
+      trackedCountRef.current = next
+      return next
+    })
   }
 
   const submitAnswer = (event: FormEvent) => {
@@ -203,12 +220,16 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
     setRoundIndex((current) => current + 1)
     setPhase('ready')
     setAnswer('')
+    trackedCountRef.current = 0
+    setTrackedCount(0)
   }
 
   const resetChallenge = () => {
     setRoundIndex(0)
     setScores([])
     setAnswer('')
+    trackedCountRef.current = 0
+    setTrackedCount(0)
     setPhase('intro')
   }
 
@@ -263,7 +284,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                 {[
                   ['1', 'One animal', 'Count a single animal type.'],
                   ['2', 'Find the target', 'Ignore the distracting animals.'],
-                  ['3', 'Memory dash', 'Learn the target after they run.'],
+                  ['3', 'Count them all', 'Count every animal in the dash.'],
                 ].map(([number, title, description]) => (
                   <div key={number} className="rounded-xl bg-secondary/60 p-4 text-center space-y-2">
                     <div className="w-8 h-8 mx-auto rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
@@ -298,18 +319,23 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
             <Card className="overflow-hidden border-primary/20">
               <CardContent className="p-0">
                 <div className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-border">
-                  <div>
-                    <div className="text-sm font-medium text-primary">Round {round.number} of 3</div>
-                    <h2 className="text-2xl font-bold">
-                      {round.number === 3 && (phase === 'ready' || phase === 'running')
-                        ? 'Watch every animal'
-                        : `Count the ${round.target.name}s`}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {round.number === 3 && (phase === 'ready' || phase === 'running')
-                        ? 'The animal to count will be revealed after the dash.'
-                        : `${round.total} animal${round.total === 1 ? '' : 's'} will cross the screen.`}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    {round.mode === 'target' && (
+                      <div className="w-16 h-16 shrink-0 rounded-xl bg-primary/10 p-1.5">
+                        {renderAnimal(round.target.id, 0)}
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-sm font-medium text-primary">Round {round.number} of 3</div>
+                      <h2 className="text-2xl font-bold">
+                        {round.mode === 'total' ? 'Count every animal' : `Count the ${round.target.name}s`}
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {round.mode === 'total'
+                          ? 'Tap the counter once for every animal that crosses.'
+                          : `Tap the counter each time you see a ${round.target.name}.`}
+                      </p>
+                    </div>
                   </div>
                   {phase === 'ready' && (
                     <Button onClick={startRound} className="gap-2">
@@ -319,102 +345,126 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                   )}
                 </div>
 
-                <div className="relative h-[360px] md:h-[430px] overflow-hidden bg-gradient-to-b from-secondary/35 to-background">
-                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/10 to-transparent" />
-                  {[18, 35, 52, 69, 86].map((top) => (
-                    <div
-                      key={top}
-                      className="absolute left-0 right-0 border-t border-dashed border-border/35"
-                      style={{ top: `${top}%` }}
-                    />
-                  ))}
+                <div className={phase === 'ready' || phase === 'running' ? 'grid lg:grid-cols-[minmax(0,1fr)_220px]' : ''}>
+                  <div className="relative order-2 lg:order-1 h-[320px] md:h-[430px] overflow-hidden bg-gradient-to-b from-secondary/35 to-background">
+                    <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/10 to-transparent" />
+                    {[18, 35, 52, 69, 86].map((top) => (
+                      <div
+                        key={top}
+                        className="absolute left-0 right-0 border-t border-dashed border-border/35"
+                        style={{ top: `${top}%` }}
+                      />
+                    ))}
 
-                  {phase === 'ready' && (
-                    <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-                      <div className="space-y-3">
-                        <div className="text-5xl font-bold text-primary">{round.total}</div>
-                        <p className="text-muted-foreground">
-                          {round.number === 3 ? 'animals are ready to dash' : 'animals are ready'}
-                        </p>
+                    {phase === 'ready' && (
+                      <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
+                        <div className="space-y-3">
+                          <div className="text-4xl font-bold text-primary">Get ready!</div>
+                          <p className="text-muted-foreground">Use the counter to keep track.</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {phase === 'running' && (
-                    <div className="absolute inset-0" aria-hidden="true">
-                      {round.runs.map((run, index) => (
-                        <div
-                          key={`${round.number}-${index}`}
-                          className={`daily-animal-run absolute ${run.dances ? 'daily-animal-dance' : ''}`}
-                          style={{
-                            animationDelay: `${run.delayMs}ms`,
-                            animationDuration: `${run.durationMs}ms`,
-                            top: `${8 + run.lane * 18}%`,
-                            width: `${run.size}px`,
-                            height: `${run.size}px`,
-                          }}
-                        >
-                          {renderAnimal(run.animalId, index * 0.85)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {phase === 'answer' && (
-                    <form onSubmit={submitAnswer} className="absolute inset-0 flex items-center justify-center p-6">
-                      <div className="w-full max-w-sm text-center space-y-5">
-                        <div>
-                          <p className="text-sm font-medium text-primary mb-1">Time to answer</p>
-                          <h3 className="text-2xl md:text-3xl font-bold">
-                            How many {round.target.name}s did you see?
-                          </h3>
-                        </div>
-                        <Input
-                          autoFocus
-                          inputMode="numeric"
-                          min="0"
-                          type="number"
-                          value={answer}
-                          onChange={(event) => setAnswer(event.target.value)}
-                          className="h-16 text-3xl text-center"
-                          aria-label={`Number of ${round.target.name}s`}
-                        />
-                        <Button
-                          type="submit"
-                          size="lg"
-                          className="w-full"
-                          disabled={!Number.isFinite(parsedAnswer) || parsedAnswer < 0}
-                        >
-                          Check answer
-                        </Button>
+                    {phase === 'running' && (
+                      <div className="absolute inset-0" aria-hidden="true">
+                        {round.runs.map((run, index) => (
+                          <div
+                            key={`${round.number}-${index}`}
+                            className={`daily-animal-run absolute ${run.dances ? 'daily-animal-dance' : ''}`}
+                            style={{
+                              animationDelay: `${run.delayMs}ms`,
+                              animationDuration: `${run.durationMs}ms`,
+                              top: `${8 + run.lane * 18}%`,
+                              width: `${run.size}px`,
+                              height: `${run.size}px`,
+                            }}
+                          >
+                            {renderAnimal(run.animalId, index * 0.85)}
+                          </div>
+                        ))}
                       </div>
-                    </form>
-                  )}
+                    )}
 
-                  {phase === 'feedback' && (
-                    <div className="absolute inset-0 flex items-center justify-center p-6">
-                      <div className="w-full max-w-lg text-center space-y-5">
-                        <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 p-2">
-                          {renderAnimal(round.target.id, 0)}
+                    {phase === 'answer' && (
+                      <form onSubmit={submitAnswer} className="absolute inset-0 flex items-center justify-center p-6">
+                        <div className="w-full max-w-sm text-center space-y-5">
+                          <div>
+                            <p className="text-sm font-medium text-primary mb-1">Time to answer</p>
+                            <h3 className="text-2xl md:text-3xl font-bold">
+                              {round.mode === 'total'
+                                ? 'How many animals did you see?'
+                                : `How many ${round.target.name}s did you see?`}
+                            </h3>
+                          </div>
+                          <Input
+                            autoFocus
+                            inputMode="numeric"
+                            min="0"
+                            type="number"
+                            value={answer}
+                            onChange={(event) => setAnswer(event.target.value)}
+                            className="h-16 text-3xl text-center"
+                            aria-label={round.mode === 'total' ? 'Total number of animals' : `Number of ${round.target.name}s`}
+                          />
+                          <Button
+                            type="submit"
+                            size="lg"
+                            className="w-full"
+                            disabled={!Number.isFinite(parsedAnswer) || parsedAnswer < 0}
+                          >
+                            Check answer
+                          </Button>
                         </div>
-                        <div>
-                          <h3 className="text-3xl font-bold">
-                            {getAccuracyMessage(parsedAnswer, round.targetCount)}
-                          </h3>
-                          <p className="text-muted-foreground mt-2">
-                            You guessed <strong className="text-foreground">{parsedAnswer}</strong>. The answer was{' '}
-                            <strong className="text-foreground">{round.targetCount}</strong>.
-                          </p>
+                      </form>
+                    )}
+
+                    {phase === 'feedback' && (
+                      <div className="absolute inset-0 flex items-center justify-center p-6">
+                        <div className="w-full max-w-lg text-center space-y-5">
+                          {round.mode !== 'total' && (
+                            <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 p-2">
+                              {renderAnimal(round.target.id, 0)}
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="text-3xl font-bold">
+                              {getAccuracyMessage(parsedAnswer, round.targetCount)}
+                            </h3>
+                            <p className="text-muted-foreground mt-2">
+                              You guessed <strong className="text-foreground">{parsedAnswer}</strong>. The answer was{' '}
+                              <strong className="text-foreground">{round.targetCount}</strong>.
+                            </p>
+                          </div>
+                          <div className="text-xl font-semibold">
+                            Round score: {scores[scores.length - 1]} / 100
+                          </div>
+                          <Button size="lg" onClick={continueChallenge} className="gap-2">
+                            {roundIndex === rounds.length - 1 ? 'See final score' : 'Next round'}
+                            <ArrowRight size={18} weight="bold" />
+                          </Button>
                         </div>
-                        <div className="text-xl font-semibold">
-                          Round score: {scores[scores.length - 1]} / 100
-                        </div>
-                        <Button size="lg" onClick={continueChallenge} className="gap-2">
-                          {roundIndex === rounds.length - 1 ? 'See final score' : 'Next round'}
-                          <ArrowRight size={18} weight="bold" />
-                        </Button>
                       </div>
-                    </div>
+                    )}
+                  </div>
+
+                  {(phase === 'ready' || phase === 'running') && (
+                    <aside className="order-1 lg:order-2 p-4 md:p-5 border-b lg:border-b-0 lg:border-l border-border bg-card/70">
+                      <button
+                        type="button"
+                        onClick={incrementTrackedCount}
+                        disabled={phase !== 'running'}
+                        className="w-full h-32 lg:h-full min-h-32 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex lg:flex-col items-center justify-center gap-4 lg:gap-2"
+                        aria-label={`Count tracker: ${trackedCount}. Tap to add one.`}
+                      >
+                        <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                          Tap counter
+                        </span>
+                        <span className="text-6xl lg:text-7xl font-bold tabular-nums text-primary">
+                          {trackedCount}
+                        </span>
+                        <span className="text-sm text-muted-foreground">+1</span>
+                      </button>
+                    </aside>
                   )}
                 </div>
               </CardContent>
