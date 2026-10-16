@@ -3405,7 +3405,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
               size="sm"
               onClick={handleCallAnimals}
               disabled={forcePeekAll || currentTallies.length === 0}
-              className="gap-2"
+              className="gap-2 hover:text-white"
             >
               <Megaphone size={16} weight="bold" />
               Call
@@ -3415,7 +3415,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
               size="sm"
               onClick={handleFeedAnimals}
               disabled={forceFeedingAll || currentTallies.length === 0}
-              className="gap-2"
+              className="gap-2 hover:text-white"
             >
               <PersonSimpleTaiChi size={16} weight="bold" />
               Dance
@@ -3424,12 +3424,12 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
               variant="outline"
               size="sm"
               onClick={() => setShowCalendar(true)}
-              className="gap-2"
+              className="gap-2 hover:text-white"
             >
               <CalendarBlank size={16} weight="bold" />
               History
             </Button>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" className="hover:text-white" asChild>
               <a href={`${import.meta.env.BASE_URL}daily/`} className="gap-2">
                 <Target size={16} weight="bold" />
                 Daily
