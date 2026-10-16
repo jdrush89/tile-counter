@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, CalendarBlank, Play, Trophy } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, CalendarBlank, Check, Copy, Play, ShareNetwork, Trophy } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -42,6 +42,7 @@ interface DailyRound {
 }
 
 type ChallengePhase = 'intro' | 'ready' | 'running' | 'answer' | 'feedback' | 'complete'
+type ShareStatus = 'idle' | 'copied' | 'shared' | 'error'
 
 const ROUND_RANGES = [
   { mode: 'single' as const, min: 10, max: 50, typeCount: 1 },
@@ -204,6 +205,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
   const [trackedCount, setTrackedCount] = useState(0)
   const [trackedAnimalCounts, setTrackedAnimalCounts] = useState<Record<number, number>>({})
   const [scores, setScores] = useState<number[]>([])
+  const [shareStatus, setShareStatus] = useState<ShareStatus>('idle')
   const [, setDailyChallengeAttempts] = useStorage<DailyChallengeAttempts>(DAILY_CHALLENGE_ATTEMPTS_KEY, {})
   const trackedCountRef = useRef(0)
   const trackedAnimalCountsRef = useRef<Record<number, number>>({})
@@ -305,6 +307,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
   const resetChallenge = () => {
     setRoundIndex(0)
     setScores([])
+    setShareStatus('idle')
     setAnswer('')
     trackedCountRef.current = 0
     setTrackedCount(0)
@@ -323,6 +326,55 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
     month: 'long',
     day: 'numeric',
   })
+  const shareDate = new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  const roundMarkers = scores.map((score) => {
+    if (score === 100) return '🟩'
+    if (score >= 75) return '🟨'
+    if (score >= 50) return '🟧'
+    if (score > 0) return '🟥'
+    return '⬛'
+  }).join('')
+  const getDailyUrl = () => new URL('daily/', `${window.location.origin}${homeUrl}`).toString()
+  const getShareText = (includeUrl: boolean) => [
+    `Banana Tally — ${shareDate}`,
+    `${finalScore}/${maxScore} ${roundMarkers}`,
+    'Can you beat my score?',
+    includeUrl ? getDailyUrl() : '',
+  ].filter(Boolean).join('\n')
+
+  const copyShareResult = async () => {
+    try {
+      await navigator.clipboard.writeText(getShareText(true))
+      setShareStatus('copied')
+    } catch (error) {
+      console.error('Unable to copy daily challenge result:', error)
+      setShareStatus('error')
+    }
+  }
+
+  const shareResult = async () => {
+    if (!navigator.share) {
+      await copyShareResult()
+      return
+    }
+
+    try {
+      await navigator.share({
+        title: 'Banana Tally daily challenge',
+        text: getShareText(false),
+        url: getDailyUrl(),
+      })
+      setShareStatus('shared')
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      console.error('Unable to share daily challenge result:', error)
+      setShareStatus('error')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -686,6 +738,43 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                     <div className="text-xl font-bold">{score}</div>
                   </div>
                 ))}
+              </div>
+              <div className="rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/10 via-card to-amber-500/10 p-5 text-left">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-bold text-lg">🍌 Banana Tally</p>
+                    <p className="text-sm text-muted-foreground">{shareDate}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold tabular-nums">{finalScore}/{maxScore}</p>
+                    <p className="text-xs text-muted-foreground">Daily score</p>
+                  </div>
+                </div>
+                <div className="mt-5 text-3xl tracking-widest" aria-label="Spoiler-free round results">
+                  {roundMarkers}
+                </div>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Share your score without revealing any answers.
+                </p>
+                <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                  {'share' in navigator && (
+                    <Button className="flex-1 gap-2" onClick={shareResult}>
+                      <ShareNetwork size={18} weight="bold" />
+                      {shareStatus === 'shared' ? 'Shared!' : 'Share result'}
+                    </Button>
+                  )}
+                  <Button variant="outline" className="flex-1 gap-2" onClick={copyShareResult}>
+                    {shareStatus === 'copied'
+                      ? <Check size={18} weight="bold" />
+                      : <Copy size={18} weight="bold" />}
+                    {shareStatus === 'copied' ? 'Copied!' : 'Copy result'}
+                  </Button>
+                </div>
+                {shareStatus === 'error' && (
+                  <p className="mt-3 text-sm text-destructive" role="alert">
+                    Couldn&apos;t share this result. Please try copying it again.
+                  </p>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" className="flex-1" asChild>
