@@ -14,6 +14,10 @@ import { isNativePlatform, useStorage, useDeviceUserId, getPlatform } from '@/ho
 import { usePurchases } from '@/hooks/use-purchases'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DailyChallenge } from '@/DailyChallenge'
+import {
+  DAILY_CHALLENGE_ATTEMPTS_KEY,
+  type DailyChallengeAttempts,
+} from '@/lib/daily-challenge-storage'
 
 interface TallyEvent {
   tallyId: string
@@ -1925,6 +1929,7 @@ function CalendarView({
   events, 
   tallies, 
   dailyNotes,
+  dailyChallengeAttempts,
   onClose,
   onUpdateEventNote,
   onUpdateDailyNote,
@@ -1934,6 +1939,7 @@ function CalendarView({
   events: TallyEvent[]
   tallies: Tally[]
   dailyNotes: DailyTallyNote[]
+  dailyChallengeAttempts: DailyChallengeAttempts
   onClose: () => void
   onUpdateEventNote: (timestamp: number, note: string) => void
   onUpdateDailyNote: (date: string, tallyId: string, note: string) => void
@@ -2101,6 +2107,7 @@ function CalendarView({
     const dayEvents = getEventsForDay(day)
     const eventsByTally = getEventsByTallyForDay(dayEvents)
     const hasEvents = dayEvents.length > 0
+    const dailyChallengeAttempt = dailyChallengeAttempts[getDateKey(day)]
     
     cells.push(
       <button 
@@ -2115,6 +2122,13 @@ function CalendarView({
           {day}
         </div>
         <div className="space-y-0.5 overflow-y-auto max-h-12 md:max-h-16">
+          {dailyChallengeAttempt && (
+            <div className="flex items-center gap-1 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1 py-0.5 text-[9px] md:text-[10px] font-semibold">
+              <Trophy size={10} weight="fill" className="shrink-0" />
+              <span className="truncate">Daily complete</span>
+              <span className="ml-auto tabular-nums">{dailyChallengeAttempt.score}/{dailyChallengeAttempt.maxScore}</span>
+            </div>
+          )}
           {Object.entries(eventsByTally).map(([tallyId, { count, tally, events: tallyEvents }]) => {
             const hasDailyNote = getDailyNoteForTally(day, tallyId)
             return tally && (
@@ -2920,7 +2934,8 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   const [purchasedAnimals, setPurchasedAnimals, purchasedAnimalsLoaded] = useStorage<number[]>(`purchased-animals-${user.id}`, [])
   const [tallyEvents, setTallyEvents, tallyEventsLoaded] = useStorage<TallyEvent[]>(`tally-events-${user.id}`, [])
   const [dailyTallyNotes, setDailyTallyNotes, dailyTallyNotesLoaded] = useStorage<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
-  const storageLoaded = talliesLoaded && purchasedAnimalsLoaded && tallyEventsLoaded && dailyTallyNotesLoaded
+  const [dailyChallengeAttempts, , dailyChallengeAttemptsLoaded] = useStorage<DailyChallengeAttempts>(DAILY_CHALLENGE_ATTEMPTS_KEY, {})
+  const storageLoaded = talliesLoaded && purchasedAnimalsLoaded && tallyEventsLoaded && dailyTallyNotesLoaded && dailyChallengeAttemptsLoaded
   
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -2956,6 +2971,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   const currentPurchased = purchasedAnimals ?? []
   const currentEvents = tallyEvents ?? []
   const currentDailyNotes = dailyTallyNotes ?? []
+  const currentDailyChallengeAttempts = dailyChallengeAttempts ?? {}
   const [showNewButton, setShowNewButton] = useState(false)
   
   const totalTallies = useMemo(() => 
@@ -3880,6 +3896,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
             events={currentEvents} 
             tallies={currentTallies}
             dailyNotes={currentDailyNotes}
+            dailyChallengeAttempts={currentDailyChallengeAttempts}
             onClose={() => setShowCalendar(false)}
             onUpdateEventNote={updateEventNote}
             onUpdateDailyNote={updateDailyNote}

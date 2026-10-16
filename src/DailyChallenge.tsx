@@ -3,6 +3,11 @@ import { ArrowLeft, ArrowRight, CalendarBlank, Play, Trophy } from '@phosphor-ic
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useStorage } from '@/hooks/use-storage'
+import {
+  DAILY_CHALLENGE_ATTEMPTS_KEY,
+  type DailyChallengeAttempts,
+} from '@/lib/daily-challenge-storage'
 
 export interface DailyAnimal {
   id: number
@@ -23,8 +28,11 @@ interface AnimalRun {
   size: number
 }
 
+type RoundMode = 'single' | 'target' | 'most' | 'total'
+
 interface DailyRound {
-  mode: 'single' | 'target' | 'total'
+  animals: DailyAnimal[]
+  mode: RoundMode
   number: number
   total: number
   target: DailyAnimal
@@ -36,9 +44,10 @@ interface DailyRound {
 type ChallengePhase = 'intro' | 'ready' | 'running' | 'answer' | 'feedback' | 'complete'
 
 const ROUND_RANGES = [
-  { min: 10, max: 50, typeCount: 1 },
-  { min: 20, max: 100, typeCount: 4 },
-  { min: 30, max: 300, typeCount: 7 },
+  { mode: 'single' as const, min: 10, max: 50, typeCount: 1 },
+  { mode: 'target' as const, min: 20, max: 100, typeCount: 4 },
+  { mode: 'most' as const, min: 30, max: 150, typeCount: 3 },
+  { mode: 'total' as const, min: 50, max: 300, typeCount: 7 },
 ]
 
 function getLocalDateKey(date = new Date()) {
@@ -93,9 +102,26 @@ function distributeAnimals(total: number, animals: DailyAnimal[], random: () => 
   return counts
 }
 
+function distributeMostAnimals(total: number, animals: DailyAnimal[], winner: DailyAnimal, random: () => number) {
+  const winnerCount = randomInt(random, Math.ceil(total * 0.38), Math.floor(total * 0.5))
+  const remaining = total - winnerCount
+  const loserMinimum = Math.max(1, remaining - (winnerCount - 1))
+  const loserMaximum = Math.min(winnerCount - 1, remaining - 1)
+  const firstLoserCount = randomInt(random, loserMinimum, loserMaximum)
+  const secondLoserCount = remaining - firstLoserCount
+  const losers = animals.filter((animal) => animal.id !== winner.id)
+
+  return new Map([
+    [winner.id, winnerCount],
+    [losers[0].id, firstLoserCount],
+    [losers[1].id, secondLoserCount],
+  ])
+}
+
 function getRoundDuration(roundIndex: number, total: number) {
   if (roundIndex === 0) return Math.min(14000, 8000 + total * 120)
   if (roundIndex === 1) return Math.min(19000, 10000 + total * 90)
+  if (roundIndex === 2) return Math.min(22000, 12000 + total * 55)
   return Math.min(24000, 13000 + total * 38)
 }
 
@@ -105,10 +131,12 @@ function createDailyRounds(dateKey: string, animals: DailyAnimal[]) {
     const total = randomInt(random, settings.min, settings.max)
     const availableTypes = Math.min(settings.typeCount, animals.length, total)
     const selectedAnimals = shuffled(animals, random).slice(0, availableTypes)
-    const counts = distributeAnimals(total, selectedAnimals, random)
-    const target = roundIndex === 0
+    const target = settings.mode === 'single'
       ? selectedAnimals[0]
       : selectedAnimals[randomInt(random, 0, selectedAnimals.length - 1)]
+    const counts = settings.mode === 'most'
+      ? distributeMostAnimals(total, selectedAnimals, target, random)
+      : distributeAnimals(total, selectedAnimals, random)
     const animalIds = selectedAnimals.flatMap((animal) =>
       Array.from({ length: counts.get(animal.id) ?? 0 }, () => animal.id)
     )
@@ -133,11 +161,12 @@ function createDailyRounds(dateKey: string, animals: DailyAnimal[]) {
     }
 
     return {
-      mode: roundIndex === 0 ? 'single' : roundIndex === 1 ? 'target' : 'total',
+      animals: selectedAnimals,
+      mode: settings.mode,
       number: roundIndex + 1,
       total,
       target,
-      targetCount: roundIndex === 2 ? total : counts.get(target.id) ?? 0,
+      targetCount: settings.mode === 'total' ? total : counts.get(target.id) ?? 0,
       durationMs,
       runs,
     }
@@ -173,24 +202,40 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
   const [phase, setPhase] = useState<ChallengePhase>('intro')
   const [answer, setAnswer] = useState('')
   const [trackedCount, setTrackedCount] = useState(0)
+  const [trackedAnimalCounts, setTrackedAnimalCounts] = useState<Record<number, number>>({})
   const [scores, setScores] = useState<number[]>([])
+  const [, setDailyChallengeAttempts] = useStorage<DailyChallengeAttempts>(DAILY_CHALLENGE_ATTEMPTS_KEY, {})
   const trackedCountRef = useRef(0)
+  const trackedAnimalCountsRef = useRef<Record<number, number>>({})
   const round = rounds[roundIndex]
   const homeUrl = import.meta.env.BASE_URL
 
   useEffect(() => {
     if (phase !== 'running') return
     const timer = window.setTimeout(() => {
-      setAnswer(String(trackedCountRef.current))
+      if (round.mode === 'most') {
+        const counts = round.animals.map((animal) => ({
+          animalId: animal.id,
+          count: trackedAnimalCountsRef.current[animal.id] ?? 0,
+        }))
+        const highestCount = Math.max(...counts.map((item) => item.count))
+        const leaders = counts.filter((item) => item.count === highestCount)
+        setAnswer(leaders.length === 1 ? String(leaders[0].animalId) : '')
+      } else {
+        setAnswer(String(trackedCountRef.current))
+      }
       setPhase('answer')
     }, round.durationMs)
     return () => window.clearTimeout(timer)
-  }, [phase, round.durationMs])
+  }, [phase, round.durationMs, round.mode])
 
   const startRound = () => {
     setAnswer('')
     trackedCountRef.current = 0
     setTrackedCount(0)
+    const initialAnimalCounts = Object.fromEntries(round.animals.map((animal) => [animal.id, 0]))
+    trackedAnimalCountsRef.current = initialAnimalCounts
+    setTrackedAnimalCounts(initialAnimalCounts)
     setPhase('running')
   }
 
@@ -202,17 +247,48 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
     })
   }
 
+  const incrementTrackedAnimal = (animalId: number) => {
+    setTrackedAnimalCounts((current) => {
+      const next = {
+        ...current,
+        [animalId]: (current[animalId] ?? 0) + 1,
+      }
+      trackedAnimalCountsRef.current = next
+      return next
+    })
+  }
+
   const submitAnswer = (event: FormEvent) => {
     event.preventDefault()
     const parsedAnswer = Number.parseInt(answer, 10)
-    if (!Number.isFinite(parsedAnswer) || parsedAnswer < 0) return
+    if (round.mode === 'most') {
+      if (!round.animals.some((animal) => animal.id === parsedAnswer)) return
+      setScores((current) => [...current, parsedAnswer === round.target.id ? 100 : 0])
+      setPhase('feedback')
+      return
+    }
 
+    if (!Number.isFinite(parsedAnswer) || parsedAnswer < 0) return
     setScores((current) => [...current, scoreAnswer(parsedAnswer, round.targetCount)])
     setPhase('feedback')
   }
 
   const continueChallenge = () => {
     if (roundIndex === rounds.length - 1) {
+      const firstAttemptScore = scores.reduce((total, score) => total + score, 0)
+      setDailyChallengeAttempts((current) => {
+        const attempts = current ?? {}
+        if (attempts[dateKey]) return attempts
+
+        return {
+          ...attempts,
+          [dateKey]: {
+            completedAt: Date.now(),
+            maxScore: rounds.length * 100,
+            score: firstAttemptScore,
+          },
+        }
+      })
       setPhase('complete')
       return
     }
@@ -222,6 +298,8 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
     setAnswer('')
     trackedCountRef.current = 0
     setTrackedCount(0)
+    trackedAnimalCountsRef.current = {}
+    setTrackedAnimalCounts({})
   }
 
   const resetChallenge = () => {
@@ -230,11 +308,16 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
     setAnswer('')
     trackedCountRef.current = 0
     setTrackedCount(0)
+    trackedAnimalCountsRef.current = {}
+    setTrackedAnimalCounts({})
     setPhase('intro')
   }
 
   const parsedAnswer = Number.parseInt(answer, 10)
   const finalScore = scores.reduce((total, score) => total + score, 0)
+  const maxScore = rounds.length * 100
+  const finalPercentage = Math.round((finalScore / maxScore) * 100)
+  const selectedAnimal = round.animals.find((animal) => animal.id === parsedAnswer)
   const formattedDate = new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'long',
@@ -273,18 +356,19 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Daily Animal Dash</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Three counting challenges generated from today&apos;s date, keeping the challenge consistent all day.
+            Four animal challenges generated from today&apos;s date, keeping the challenge consistent all day.
           </p>
         </header>
 
         {phase === 'intro' && (
           <Card className="max-w-2xl mx-auto border-primary/30">
             <CardContent className="p-6 md:p-8 space-y-6">
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {[
                   ['1', 'One animal', 'Count a single animal type.'],
                   ['2', 'Find the target', 'Ignore the distracting animals.'],
-                  ['3', 'Count them all', 'Count every animal in the dash.'],
+                  ['3', 'Pick the most', 'Choose the animal that appeared most.'],
+                  ['4', 'Count them all', 'Count every animal in the dash.'],
                 ].map(([number, title, description]) => (
                   <div key={number} className="rounded-xl bg-secondary/60 p-4 text-center space-y-2">
                     <div className="w-8 h-8 mx-auto rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
@@ -305,7 +389,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
 
         {phase !== 'intro' && phase !== 'complete' && (
           <>
-            <div className="flex items-center gap-2 max-w-2xl mx-auto" aria-label={`Round ${round.number} of 3`}>
+            <div className="flex items-center gap-2 max-w-2xl mx-auto" aria-label={`Round ${round.number} of ${rounds.length}`}>
               {rounds.map((item, index) => (
                 <div
                   key={item.number}
@@ -326,15 +410,31 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                       </div>
                     )}
                     <div>
-                      <div className="text-sm font-medium text-primary">Round {round.number} of 3</div>
+                      <div className="text-sm font-medium text-primary">Round {round.number} of {rounds.length}</div>
                       <h2 className="text-2xl font-bold">
-                        {round.mode === 'total' ? 'Count every animal' : `Count the ${round.target.name}s`}
+                        {round.mode === 'most'
+                          ? 'Which animal appears most?'
+                          : round.mode === 'total'
+                            ? 'Count every animal'
+                            : `Count the ${round.target.name}s`}
                       </h2>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {round.mode === 'total'
-                          ? 'Tap the counter once for every animal that crosses.'
-                          : `Tap the counter each time you see a ${round.target.name}.`}
+                        {round.mode === 'most'
+                          ? 'Watch all three animal types, then choose the most frequent.'
+                          : round.mode === 'total'
+                            ? 'Tap the counter once for every animal that crosses.'
+                            : `Tap the counter each time you see a ${round.target.name}.`}
                       </p>
+                      {round.mode === 'most' && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {round.animals.map((animal) => (
+                            <div key={animal.id} className="flex items-center gap-1.5 rounded-lg bg-secondary/70 px-2 py-1">
+                              <span className="w-8 h-8">{renderAnimal(animal.id, 0)}</span>
+                              <span className="text-xs font-medium">{animal.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {phase === 'ready' && (
@@ -345,7 +445,13 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                   )}
                 </div>
 
-                <div className={phase === 'ready' || phase === 'running' ? 'grid lg:grid-cols-[minmax(0,1fr)_220px]' : ''}>
+                <div className={
+                  phase === 'ready' || phase === 'running'
+                    ? round.mode === 'most'
+                      ? 'grid lg:grid-cols-[minmax(0,1fr)_280px]'
+                      : 'grid lg:grid-cols-[minmax(0,1fr)_220px]'
+                    : ''
+                }>
                   <div className="relative order-2 lg:order-1 h-[320px] md:h-[430px] overflow-hidden bg-gradient-to-b from-secondary/35 to-background">
                     <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/10 to-transparent" />
                     {[18, 35, 52, 69, 86].map((top) => (
@@ -360,7 +466,9 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                       <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
                         <div className="space-y-3">
                           <div className="text-4xl font-bold text-primary">Get ready!</div>
-                          <p className="text-muted-foreground">Use the counter to keep track.</p>
+                          <p className="text-muted-foreground">
+                            {round.mode === 'most' ? 'Watch for which animal appears most.' : 'Use the counter to keep track.'}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -387,32 +495,65 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
 
                     {phase === 'answer' && (
                       <form onSubmit={submitAnswer} className="absolute inset-0 flex items-center justify-center p-6">
-                        <div className="w-full max-w-sm text-center space-y-5">
+                        <div className={`w-full text-center space-y-5 ${round.mode === 'most' ? 'max-w-2xl' : 'max-w-sm'}`}>
                           <div>
                             <p className="text-sm font-medium text-primary mb-1">Time to answer</p>
                             <h3 className="text-2xl md:text-3xl font-bold">
-                              {round.mode === 'total'
-                                ? 'How many animals did you see?'
-                                : `How many ${round.target.name}s did you see?`}
+                              {round.mode === 'most'
+                                ? 'Which animal appeared the most?'
+                                : round.mode === 'total'
+                                  ? 'How many animals did you see?'
+                                  : `How many ${round.target.name}s did you see?`}
                             </h3>
                           </div>
-                          <Input
-                            autoFocus
-                            inputMode="numeric"
-                            min="0"
-                            type="number"
-                            value={answer}
-                            onChange={(event) => setAnswer(event.target.value)}
-                            className="h-16 text-3xl text-center"
-                            aria-label={round.mode === 'total' ? 'Total number of animals' : `Number of ${round.target.name}s`}
-                          />
+                          {round.mode === 'most' ? (
+                            <div className="grid grid-cols-3 gap-3">
+                              {round.animals.map((animal) => {
+                                const isSelected = answer === String(animal.id)
+                                return (
+                                  <button
+                                    key={animal.id}
+                                    type="button"
+                                    onClick={() => setAnswer(String(animal.id))}
+                                    className={`rounded-2xl border-2 p-3 transition-all ${
+                                      isSelected
+                                        ? 'border-primary bg-primary/15 ring-2 ring-primary/30'
+                                        : 'border-border bg-card hover:border-primary/50'
+                                    }`}
+                                    aria-pressed={isSelected}
+                                  >
+                                    <span className="block w-16 h-16 mx-auto">{renderAnimal(animal.id, 0)}</span>
+                                    <span className="block font-semibold mt-2">{animal.name}</span>
+                                    <span className="block text-xs text-muted-foreground mt-1">
+                                      Counted {trackedAnimalCounts[animal.id] ?? 0}
+                                    </span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <Input
+                              autoFocus
+                              inputMode="numeric"
+                              min="0"
+                              type="number"
+                              value={answer}
+                              onChange={(event) => setAnswer(event.target.value)}
+                              className="h-16 text-3xl text-center"
+                              aria-label={round.mode === 'total' ? 'Total number of animals' : `Number of ${round.target.name}s`}
+                            />
+                          )}
                           <Button
                             type="submit"
                             size="lg"
                             className="w-full"
-                            disabled={!Number.isFinite(parsedAnswer) || parsedAnswer < 0}
+                            disabled={
+                              round.mode === 'most'
+                                ? !round.animals.some((animal) => animal.id === parsedAnswer)
+                                : !Number.isFinite(parsedAnswer) || parsedAnswer < 0
+                            }
                           >
-                            Check answer
+                            {round.mode === 'most' ? 'Submit choice' : 'Check answer'}
                           </Button>
                         </div>
                       </form>
@@ -428,11 +569,26 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                           )}
                           <div>
                             <h3 className="text-3xl font-bold">
-                              {getAccuracyMessage(parsedAnswer, round.targetCount)}
+                              {round.mode === 'most'
+                                ? parsedAnswer === round.target.id
+                                  ? 'Correct choice!'
+                                  : 'Not quite!'
+                                : getAccuracyMessage(parsedAnswer, round.targetCount)}
                             </h3>
                             <p className="text-muted-foreground mt-2">
-                              You guessed <strong className="text-foreground">{parsedAnswer}</strong>. The answer was{' '}
-                              <strong className="text-foreground">{round.targetCount}</strong>.
+                              {round.mode === 'most' ? (
+                                <>
+                                  <strong className="text-foreground">{round.target.name}</strong> appeared most
+                                  {selectedAnimal && selectedAnimal.id !== round.target.id
+                                    ? `; you chose ${selectedAnimal.name}.`
+                                    : '.'}
+                                </>
+                              ) : (
+                                <>
+                                  You guessed <strong className="text-foreground">{parsedAnswer}</strong>. The answer was{' '}
+                                  <strong className="text-foreground">{round.targetCount}</strong>.
+                                </>
+                              )}
                             </p>
                           </div>
                           <div className="text-xl font-semibold">
@@ -449,21 +605,42 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
 
                   {(phase === 'ready' || phase === 'running') && (
                     <aside className="order-1 lg:order-2 p-4 md:p-5 border-b lg:border-b-0 lg:border-l border-border bg-card/70">
-                      <button
-                        type="button"
-                        onClick={incrementTrackedCount}
-                        disabled={phase !== 'running'}
-                        className="w-full h-32 lg:h-full min-h-32 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex lg:flex-col items-center justify-center gap-4 lg:gap-2"
-                        aria-label={`Count tracker: ${trackedCount}. Tap to add one.`}
-                      >
-                        <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                          Tap counter
-                        </span>
-                        <span className="text-6xl lg:text-7xl font-bold tabular-nums text-primary">
-                          {trackedCount}
-                        </span>
-                        <span className="text-sm text-muted-foreground">+1</span>
-                      </button>
+                      {round.mode === 'most' ? (
+                        <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 h-full">
+                          {round.animals.map((animal) => (
+                            <button
+                              key={animal.id}
+                              type="button"
+                              onClick={() => incrementTrackedAnimal(animal.id)}
+                              disabled={phase !== 'running'}
+                              className="min-h-28 rounded-2xl border-2 border-primary/30 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex flex-col items-center justify-center gap-1 p-2"
+                              aria-label={`${animal.name} count: ${trackedAnimalCounts[animal.id] ?? 0}. Tap to add one.`}
+                            >
+                              <span className="w-12 h-12">{renderAnimal(animal.id, 0)}</span>
+                              <span className="text-xs font-semibold truncate max-w-full">{animal.name}</span>
+                              <span className="text-3xl font-bold tabular-nums text-primary">
+                                {trackedAnimalCounts[animal.id] ?? 0}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={incrementTrackedCount}
+                          disabled={phase !== 'running'}
+                          className="w-full h-32 lg:h-full min-h-32 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex lg:flex-col items-center justify-center gap-4 lg:gap-2"
+                          aria-label={`Count tracker: ${trackedCount}. Tap to add one.`}
+                        >
+                          <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                            Tap counter
+                          </span>
+                          <span className="text-6xl lg:text-7xl font-bold tabular-nums text-primary">
+                            {trackedCount}
+                          </span>
+                          <span className="text-sm text-muted-foreground">+1</span>
+                        </button>
+                      )}
                     </aside>
                   )}
                 </div>
@@ -480,18 +657,18 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
               </div>
               <div>
                 <p className="text-sm font-medium text-primary">Today&apos;s challenge complete</p>
-                <h2 className="text-4xl font-bold mt-1">{finalScore} / 300</h2>
+                <h2 className="text-4xl font-bold mt-1">{finalScore} / {maxScore}</h2>
                 <p className="text-muted-foreground mt-2">
-                  {finalScore === 300
+                  {finalScore === maxScore
                     ? 'A flawless animal count!'
-                    : finalScore >= 240
+                    : finalPercentage >= 80
                       ? 'Excellent counting!'
-                      : finalScore >= 150
+                      : finalPercentage >= 50
                         ? 'Nice work. Come back tomorrow for a new challenge.'
                         : 'Those animals were quick. Try today’s challenge again!'}
                 </p>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {scores.map((score, index) => (
                   <div key={index} className="rounded-xl bg-secondary/60 p-3">
                     <div className="text-xs text-muted-foreground">Round {index + 1}</div>

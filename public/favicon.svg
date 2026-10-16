@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#2b2344"/>
+  <g transform="translate(6 7) scale(1.05)">
+    <path
+      d="M20 8 Q14 12 12 20 Q11 28 16 34 Q20 36 24 35 Q28 34 30 30 Q34 22 32 14 Q30 8 26 6 Q22 5 20 8"
+      fill="#facc15"
+      stroke="#fef08a"
+      stroke-width="1.5"
+    />
+    <path d="M22 6 Q24 4 26 5" stroke="#fef08a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="18" cy="16" rx="1.5" ry="2" fill="#292524"/>
+    <ellipse cx="26" cy="14" rx="1.5" ry="2" fill="#292524"/>
+    <path d="M20 22 Q22 24 24 22" stroke="#292524" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <line x1="14" y1="18" x2="6" y2="14" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="5" cy="13" r="2.3" fill="#facc15"/>
+    <line x1="30" y1="16" x2="38" y2="12" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="39" cy="11" r="2.3" fill="#facc15"/>
+    <line x1="18" y1="32" x2="13" y2="41" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="12" cy="43" rx="3" ry="1.7" fill="#facc15"/>
+    <line x1="24" y1="34" x2="29" y2="43" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="30" cy="45" rx="3" ry="1.7" fill="#facc15"/>
+  </g>
+</svg>
