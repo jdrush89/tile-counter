@@ -375,9 +375,10 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
       setShareStatus('error')
     }
   }
+  const isPlaying = phase !== 'intro' && phase !== 'complete'
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className={`min-h-screen bg-background p-3 md:p-5 ${isPlaying ? 'h-[100dvh] overflow-hidden' : ''}`}>
       <div
         className="fixed inset-0 opacity-[0.08] pointer-events-none"
         style={{
@@ -386,7 +387,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
         }}
       />
 
-      <main className="relative max-w-5xl mx-auto space-y-6">
+      <main className={`relative max-w-5xl mx-auto ${isPlaying ? 'h-full flex flex-col gap-3' : 'space-y-5'}`}>
         <div className="flex items-center justify-between gap-4">
           <Button variant="outline" size="sm" asChild>
             <a href={homeUrl} className="gap-2">
@@ -400,16 +401,8 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
           </div>
         </div>
 
-        <header className="text-center space-y-3 py-2">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 p-2">
-              {renderAnimal(11, 0)}
-            </div>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Daily Animal Dash</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Four animal challenges generated from today&apos;s date, keeping the challenge consistent all day.
-          </p>
+        <header className="text-center">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Daily Animal Dash</h1>
         </header>
 
         {phase === 'intro' && (
@@ -440,7 +433,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
         )}
 
         {phase !== 'intro' && phase !== 'complete' && (
-          <>
+          <div className="flex flex-1 min-h-0 flex-col gap-3">
             <div className="flex items-center gap-2 max-w-2xl mx-auto" aria-label={`Round ${round.number} of ${rounds.length}`}>
               {rounds.map((item, index) => (
                 <div
@@ -452,18 +445,18 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
               ))}
             </div>
 
-            <Card className="overflow-hidden border-primary/20">
-              <CardContent className="p-0">
-                <div className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-border">
+            <Card className="flex-1 min-h-0 overflow-hidden border-primary/20">
+              <CardContent className="p-0 h-full min-h-0 flex flex-col">
+                <div className="p-3 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border">
                   <div className="flex items-center gap-4">
                     {round.mode === 'target' && (
-                      <div className="w-16 h-16 shrink-0 rounded-xl bg-primary/10 p-1.5">
+                      <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-xl bg-primary/10 p-1.5">
                         {renderAnimal(round.target.id, 0)}
                       </div>
                     )}
                     <div>
                       <div className="text-sm font-medium text-primary">Round {round.number} of {rounds.length}</div>
-                      <h2 className="text-2xl font-bold">
+                      <h2 className="text-xl md:text-2xl font-bold">
                         {round.mode === 'most'
                           ? 'Which animal appears most?'
                           : round.mode === 'total'
@@ -500,11 +493,11 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                 <div className={
                   phase === 'ready' || phase === 'running'
                     ? round.mode === 'most'
-                      ? 'grid lg:grid-cols-[minmax(0,1fr)_280px]'
-                      : 'grid lg:grid-cols-[minmax(0,1fr)_220px]'
-                    : ''
+                      ? 'grid flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)] sm:grid-rows-1 sm:grid-cols-[minmax(0,1fr)_240px]'
+                      : 'grid flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)] sm:grid-rows-1 sm:grid-cols-[minmax(0,1fr)_200px]'
+                    : 'flex-1 min-h-0'
                 }>
-                  <div className="relative order-2 lg:order-1 h-[320px] md:h-[430px] overflow-hidden bg-gradient-to-b from-secondary/35 to-background">
+                  <div className="relative order-2 sm:order-1 min-h-[180px] sm:min-h-0 h-full overflow-hidden bg-gradient-to-b from-secondary/35 to-background">
                     <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/10 to-transparent" />
                     {[18, 35, 52, 69, 86].map((top) => (
                       <div
@@ -656,12 +649,12 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                   </div>
 
                   {(phase === 'ready' || phase === 'running') && (
-                    <aside className="order-1 lg:order-2 p-4 md:p-5 border-b lg:border-b-0 lg:border-l border-border bg-card/70 flex flex-col gap-3">
+                    <aside className="order-1 sm:order-2 p-3 md:p-4 border-b sm:border-b-0 sm:border-l border-border bg-card/70 flex flex-col gap-2">
                       <p className="text-xs text-center text-muted-foreground">
                         Tap or left-click for +1. Right-click for +5.
                       </p>
                       {round.mode === 'most' ? (
-                        <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 flex-1">
+                        <div className="grid grid-cols-3 sm:grid-cols-1 gap-2 flex-1">
                           {round.animals.map((animal) => (
                             <button
                               key={animal.id}
@@ -672,7 +665,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                                 if (phase === 'running') incrementTrackedAnimal(animal.id, 5)
                               }}
                               disabled={phase !== 'running'}
-                              className="min-h-28 rounded-2xl border-2 border-primary/30 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex flex-col items-center justify-center gap-1 p-2"
+                              className="min-h-24 rounded-2xl border-2 border-primary/30 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex flex-col items-center justify-center gap-1 p-2"
                               aria-label={`${animal.name} count: ${trackedAnimalCounts[animal.id] ?? 0}. Tap or left-click to add one; right-click to add five.`}
                             >
                               <span className="w-12 h-12">{renderAnimal(animal.id, 0)}</span>
@@ -692,7 +685,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                             if (phase === 'running') incrementTrackedCount(5)
                           }}
                           disabled={phase !== 'running'}
-                          className="w-full h-32 lg:h-auto lg:flex-1 min-h-32 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex lg:flex-col items-center justify-center gap-4 lg:gap-2"
+                          className="w-full h-28 sm:h-auto sm:flex-1 min-h-28 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex sm:flex-col items-center justify-center gap-4 sm:gap-2"
                           aria-label={`Count tracker: ${trackedCount}. Tap or left-click to add one; right-click to add five.`}
                         >
                           <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -709,7 +702,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                 </div>
               </CardContent>
             </Card>
-          </>
+          </div>
         )}
 
         {phase === 'complete' && (
