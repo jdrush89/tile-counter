@@ -756,7 +756,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                       {shareStatus === 'shared' ? 'Shared!' : 'Share result'}
                     </Button>
                   )}
-                  <Button variant="outline" className="flex-1 gap-2" onClick={copyShareResult}>
+                  <Button variant="outline" className="flex-1 gap-2 hover:text-white" onClick={copyShareResult}>
                     {shareStatus === 'copied'
                       ? <Check size={18} weight="bold" />
                       : <Copy size={18} weight="bold" />}
@@ -770,7 +770,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                 )}
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" className="flex-1" asChild>
+                <Button variant="outline" className="flex-1 hover:text-white" asChild>
                   <a href={homeUrl}>Back to tallies</a>
                 </Button>
                 <Button className="flex-1" onClick={resetChallenge}>
