@@ -1,15 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-declare const spark: {
-  user: () => Promise<any>
-  kv: {
-    keys: () => Promise<string[]>
-    get: <T>(key: string) => Promise<T | undefined>
-    set: <T>(key: string, value: T) => Promise<void>
-    delete: (key: string) => Promise<void>
-  }
-}
-
 let Capacitor: any = null
 let Preferences: any = null
 let capacitorLoadAttempted = false
@@ -66,10 +56,6 @@ export const isNativePlatform = () => {
   return false
 }
 
-export const isSparkPlatform = () => {
-  return !isNativePlatform() && typeof spark !== 'undefined'
-}
-
 export const getPlatform = () => {
   if (!isCapacitorEnvironment()) return 'web'
   try {
@@ -112,7 +98,13 @@ export function useStorage<T>(
           setValue(defaultValue)
         }
       } else {
-        setValue(defaultValue)
+        try {
+          const storedValue = window.localStorage.getItem(key)
+          setValue(storedValue === null ? defaultValue : JSON.parse(storedValue) as T)
+        } catch (error) {
+          console.error('Error loading from localStorage:', error)
+          setValue(defaultValue)
+        }
       }
       setIsLoaded(true)
     }
@@ -126,6 +118,7 @@ export function useStorage<T>(
         ? (newValue as (prev: T | undefined) => T)(valueRef.current)
         : newValue
 
+      valueRef.current = resolvedValue
       setValue(resolvedValue)
 
       if (isNative && Preferences) {
@@ -135,6 +128,12 @@ export function useStorage<T>(
         }).catch((error: any) => {
           console.error('Error saving to Preferences:', error)
         })
+      } else {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(resolvedValue))
+        } catch (error) {
+          console.error('Error saving to localStorage:', error)
+        }
       }
     },
     [key, isNative]
@@ -151,18 +150,26 @@ export function useDeviceUserId(): string | null {
       const { Capacitor: cap, Preferences: prefs } = await loadCapacitor()
       const native = cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()
       
-      if (!native || !prefs) {
-        setDeviceId(null)
-        return
-      }
-
       try {
-        const result = await prefs.get({ key: 'device-user-id' })
-        if (result.value) {
-          setDeviceId(result.value)
-        } else {
-          const newId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        if (native && prefs) {
+          const result = await prefs.get({ key: 'device-user-id' })
+          if (result.value) {
+            setDeviceId(result.value)
+            return
+          }
+
+          const newId = createDeviceId()
           await prefs.set({ key: 'device-user-id', value: newId })
+          setDeviceId(newId)
+        } else {
+          const storedId = window.localStorage.getItem('device-user-id')
+          if (storedId) {
+            setDeviceId(storedId)
+            return
+          }
+
+          const newId = createDeviceId()
+          window.localStorage.setItem('device-user-id', newId)
           setDeviceId(newId)
         }
       } catch (error) {
@@ -177,27 +184,10 @@ export function useDeviceUserId(): string | null {
   return deviceId
 }
 
-export function usePlatformStorage<T>(
-  sparkKey: string,
-  defaultValue: T,
-  sparkHook?: [T | undefined, (value: T | ((prev: T | undefined) => T)) => void]
-): [T | undefined, (value: T | ((prev: T | undefined) => T)) => void, boolean] {
-  const [nativeValue, setNativeValue, nativeLoaded] = useStorage<T>(sparkKey, defaultValue)
-  const [isNative, setIsNative] = useState(false)
-
-  useEffect(() => {
-    loadCapacitor().then(({ Capacitor: cap }) => {
-      setIsNative(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform())
-    })
-  }, [])
-
-  if (isNative) {
-    return [nativeValue, setNativeValue, nativeLoaded]
+function createDeviceId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `device-${crypto.randomUUID()}`
   }
 
-  if (sparkHook) {
-    return [sparkHook[0], sparkHook[1], true]
-  }
-
-  return [defaultValue, () => {}, true]
+  return `device-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }

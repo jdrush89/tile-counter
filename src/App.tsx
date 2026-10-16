@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
-import { useKV } from '@github/spark/hooks'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon, Camera, DownloadSimple, UploadSimple, FloppyDisk } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon, Camera, DownloadSimple, UploadSimple, FloppyDisk, Target } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
@@ -14,10 +13,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { isNativePlatform, useStorage, useDeviceUserId, getPlatform } from '@/hooks/use-storage'
 import { usePurchases } from '@/hooks/use-purchases'
 import { ScrollArea } from '@/components/ui/scroll-area'
-
-declare const spark: {
-  user: () => Promise<UserInfo>
-}
+import { DailyChallenge } from '@/DailyChallenge'
 
 interface TallyEvent {
   tallyId: string
@@ -54,20 +50,14 @@ function useCurrentUser() {
   const deviceUserId = useDeviceUserId()
   
   useEffect(() => {
-    if (isNativePlatform()) {
-      // On native platforms, create a local user based on device ID
-      if (deviceUserId) {
-        setUser({
-          id: deviceUserId,
-          login: 'Local User',
-          avatarUrl: '',
-          email: '',
-          isOwner: true,
-        })
-      }
-    } else {
-      // On Spark/web, use the GitHub user
-      spark.user().then(setUser)
+    if (deviceUserId) {
+      setUser({
+        id: deviceUserId,
+        login: 'Local User',
+        avatarUrl: '',
+        email: '',
+        isOwner: true,
+      })
     }
   }, [deviceUserId])
   
@@ -2583,12 +2573,7 @@ function SnapshotsDialog({
   onRestoreSnapshot: (data: AppData) => void
   userId: string
 }) {
-  const isNative = isNativePlatform()
-  const [sparkSnapshots, setSparkSnapshots] = useKV<Snapshot[]>(`snapshots-${userId}`, [])
-  const [nativeSnapshots, setNativeSnapshots, nativeLoaded] = useStorage<Snapshot[]>(`snapshots-${userId}`, [])
-  
-  const snapshots = isNative ? nativeSnapshots : sparkSnapshots
-  const setSnapshots = isNative ? setNativeSnapshots : setSparkSnapshots
+  const [snapshots, setSnapshots] = useStorage<Snapshot[]>(`snapshots-${userId}`, [])
   const currentSnapshots = snapshots ?? []
   
   const [newSnapshotName, setNewSnapshotName] = useState('')
@@ -2870,13 +2855,7 @@ function SnapshotsDialog({
 }
 
 function useTheme() {
-  const isNative = isNativePlatform()
-  const [sparkTheme, setSparkTheme] = useKV<ThemeMode>('theme-mode', 'dark')
-  const [nativeTheme, setNativeTheme, nativeThemeLoaded] = useStorage<ThemeMode>('theme-mode', 'dark')
-  
-  const theme = isNative ? nativeTheme : sparkTheme
-  const setTheme = isNative ? setNativeTheme : setSparkTheme
-  const isLoaded = !isNative || nativeThemeLoaded
+  const [theme, setTheme, isLoaded] = useStorage<ThemeMode>('theme-mode', 'dark')
   
   useEffect(() => {
     if (!isLoaded) return
@@ -2937,29 +2916,11 @@ function SettingsMenu({
 function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode; setTheme: (theme: ThemeMode) => void }) {
   const isNative = isNativePlatform()
   
-  const [sparkTallies, setSparkTallies] = useKV<Tally[]>(`tallies-${user.id}`, [])
-  const [sparkPurchasedAnimals, setSparkPurchasedAnimals] = useKV<number[]>(`purchased-animals-${user.id}`, [])
-  const [sparkTallyEvents, setSparkTallyEvents] = useKV<TallyEvent[]>(`tally-events-${user.id}`, [])
-  const [sparkDailyTallyNotes, setSparkDailyTallyNotes] = useKV<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
-  
-  // Native storage hooks (only active on mobile)
-  const [nativeTallies, setNativeTallies, nativeTalliesLoaded] = useStorage<Tally[]>(`tallies-${user.id}`, [])
-  const [nativePurchasedAnimals, setNativePurchasedAnimals, nativePurchasedLoaded] = useStorage<number[]>(`purchased-animals-${user.id}`, [])
-  const [nativeTallyEvents, setNativeTallyEvents, nativeEventsLoaded] = useStorage<TallyEvent[]>(`tally-events-${user.id}`, [])
-  const [nativeDailyTallyNotes, setNativeDailyTallyNotes, nativeNotesLoaded] = useStorage<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
-  
-  // Select the appropriate storage based on platform
-  const tallies = isNative ? nativeTallies : sparkTallies
-  const setTallies = isNative ? setNativeTallies : setSparkTallies
-  const purchasedAnimals = isNative ? nativePurchasedAnimals : sparkPurchasedAnimals
-  const setPurchasedAnimals = isNative ? setNativePurchasedAnimals : setSparkPurchasedAnimals
-  const tallyEvents = isNative ? nativeTallyEvents : sparkTallyEvents
-  const setTallyEvents = isNative ? setNativeTallyEvents : setSparkTallyEvents
-  const dailyTallyNotes = isNative ? nativeDailyTallyNotes : sparkDailyTallyNotes
-  const setDailyTallyNotes = isNative ? setNativeDailyTallyNotes : setSparkDailyTallyNotes
-  
-  // Check if native storage is loaded
-  const nativeStorageLoaded = !isNative || (nativeTalliesLoaded && nativePurchasedLoaded && nativeEventsLoaded && nativeNotesLoaded)
+  const [tallies, setTallies, talliesLoaded] = useStorage<Tally[]>(`tallies-${user.id}`, [])
+  const [purchasedAnimals, setPurchasedAnimals, purchasedAnimalsLoaded] = useStorage<number[]>(`purchased-animals-${user.id}`, [])
+  const [tallyEvents, setTallyEvents, tallyEventsLoaded] = useStorage<TallyEvent[]>(`tally-events-${user.id}`, [])
+  const [dailyTallyNotes, setDailyTallyNotes, dailyTallyNotesLoaded] = useStorage<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
+  const storageLoaded = talliesLoaded && purchasedAnimalsLoaded && tallyEventsLoaded && dailyTallyNotesLoaded
   
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -3015,14 +2976,14 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   )
 
   useEffect(() => {
-    if (tallies !== undefined && nativeStorageLoaded) {
+    if (tallies !== undefined && storageLoaded) {
       setIsLoaded(true)
       const timer = setTimeout(() => {
         setShowNewButton(true)
       }, 200)
       return () => clearTimeout(timer)
     }
-  }, [tallies, nativeStorageLoaded])
+  }, [tallies, storageLoaded])
 
   useEffect(() => {
     return () => {
@@ -3451,6 +3412,12 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
             >
               <CalendarBlank size={16} weight="bold" />
               History
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href={`${import.meta.env.BASE_URL}daily/`} className="gap-2">
+                <Target size={16} weight="bold" />
+                Daily
+              </a>
             </Button>
           </div>
           
@@ -3963,8 +3930,34 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
 function App() {
   const user = useCurrentUser()
   const { theme, setTheme, isLoaded: themeLoaded } = useTheme()
+  const isDailyChallenge = window.location.pathname.replace(/\/+$/, '').endsWith('/daily')
 
-  if (!user || !themeLoaded) {
+  if (!themeLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 animate-pulse" />
+          <p className="text-muted-foreground">Loading your tallies...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isDailyChallenge) {
+    return (
+      <>
+        <DailyChallenge
+          animals={ALL_ANIMALS}
+          renderAnimal={(animalId, legPhase) => (
+            <RunningAnimal variant={animalId} legPhase={legPhase} />
+          )}
+        />
+        <Toaster position="top-center" />
+      </>
+    )
+  }
+
+  if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
