@@ -1701,7 +1701,7 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
         idleTimerRef.current = null
       }
       
-      setTimeout(() => {
+      const startTimer = window.setTimeout(() => {
         setIdleState('running')
         const newDirection = Math.random() > 0.5 ? 1 : -1
         setDirection(newDirection)
@@ -1734,6 +1734,8 @@ function TileAnimal({ isAnimating, isHovered, animalIndex, totalAnimals, animalT
         
         animationRef.current = requestAnimationFrame(animate)
       }, staggerDelay)
+
+      return () => window.clearTimeout(startTimer)
     }
   }, [isAnimating, staggerDelay, animalIndex, totalAnimals])
 
@@ -1893,6 +1895,7 @@ function TallyTile({
   tally, 
   isAnimating,
   animatingCount,
+  animationRunId,
   forcePeek,
   forceFeeding,
   onIncrement, 
@@ -1903,6 +1906,7 @@ function TallyTile({
   tally: Tally
   isAnimating: boolean
   animatingCount: number
+  animationRunId: number
   forcePeek?: boolean
   forceFeeding?: boolean
   onIncrement: () => void
@@ -1941,7 +1945,7 @@ function TallyTile({
         {isAnimating ? (
           Array.from({ length: maxAnimals }).map((_, i) => (
             <TileAnimal 
-              key={i} 
+              key={`${animationRunId}-${i}`}
               isAnimating={isAnimating} 
               isHovered={isHovered} 
               animalIndex={i}
@@ -1993,6 +1997,17 @@ function TallyTile({
       </Card>
     </motion.button>
   )
+}
+
+interface ActiveTallyAnimation {
+  count: number
+  runId: number
+}
+
+function getTallyAnimationDuration(count: number) {
+  const maxAnimals = Math.min(Math.max(count, 1), 20)
+  const lastAnimalStaggerDelay = (maxAnimals - 1) * 120
+  return lastAnimalStaggerDelay + 1200 + 100
 }
 
 function CalendarView({ 
@@ -3012,8 +3027,11 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
-  const [animatingId, setAnimatingId] = useState<string | null>(null)
-  const [animatingCount, setAnimatingCount] = useState(0)
+  const [activeTallyAnimations, setActiveTallyAnimations] = useState<Record<string, ActiveTallyAnimation>>({})
+  const animationQueuesRef = useRef<Record<string, number[]>>({})
+  const animationTimersRef = useRef<Record<string, number>>({})
+  const animationRunIdsRef = useRef<Record<string, number>>({})
+  const activeAnimationIdsRef = useRef(new Set<string>())
   const longPressTimerRef = useRef<number | null>(null)
   const isLongPressRef = useRef(false)
   const [isLoaded, setIsLoaded] = useState(false)
@@ -3076,6 +3094,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current)
       }
+      Object.values(animationTimersRef.current).forEach((timer) => clearTimeout(timer))
     }
   }, [])
 
@@ -3144,6 +3163,60 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
     setDialogOpen(false)
   }
 
+  const startNextTallyAnimation = (id: string) => {
+    const queue = animationQueuesRef.current[id]
+    const nextCount = queue?.shift()
+
+    if (nextCount === undefined) {
+      activeAnimationIdsRef.current.delete(id)
+      delete animationQueuesRef.current[id]
+      delete animationTimersRef.current[id]
+      setActiveTallyAnimations((current) => {
+        const remaining = { ...current }
+        delete remaining[id]
+        return remaining
+      })
+      return
+    }
+
+    activeAnimationIdsRef.current.add(id)
+    const runId = (animationRunIdsRef.current[id] ?? 0) + 1
+    animationRunIdsRef.current[id] = runId
+    setActiveTallyAnimations((current) => ({
+      ...current,
+      [id]: { count: nextCount, runId },
+    }))
+
+    animationTimersRef.current[id] = window.setTimeout(
+      () => startNextTallyAnimation(id),
+      getTallyAnimationDuration(nextCount)
+    )
+  }
+
+  const queueTallyAnimation = (id: string, count: number) => {
+    const queue = animationQueuesRef.current[id] ?? []
+    queue.push(count)
+    animationQueuesRef.current[id] = queue
+
+    if (!activeAnimationIdsRef.current.has(id)) {
+      startNextTallyAnimation(id)
+    }
+  }
+
+  const clearTallyAnimation = (id: string) => {
+    const timer = animationTimersRef.current[id]
+    if (timer !== undefined) clearTimeout(timer)
+    delete animationTimersRef.current[id]
+    delete animationQueuesRef.current[id]
+    delete animationRunIdsRef.current[id]
+    activeAnimationIdsRef.current.delete(id)
+    setActiveTallyAnimations((current) => {
+      const remaining = { ...current }
+      delete remaining[id]
+      return remaining
+    })
+  }
+
   const incrementTally = (id: string) => {
     const currentTally = currentTallies.find(t => t.id === id)
     const newCount = currentTally ? currentTally.count + 1 : 1
@@ -3163,18 +3236,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
       }, 300)
     }
     
-    setAnimatingId(id)
-    setAnimatingCount(newCount)
-    
-    const maxAnimals = Math.min(newCount, 20)
-    const lastAnimalStaggerDelay = (maxAnimals - 1) * 120
-    const animationDuration = 1200
-    const totalAnimationTime = lastAnimalStaggerDelay + animationDuration + 100
-    
-    setTimeout(() => {
-      setAnimatingId(null)
-      setAnimatingCount(0)
-    }, totalAnimationTime)
+    queueTallyAnimation(id, newCount)
   }
 
   const decrementTally = (id: string) => {
@@ -3290,6 +3352,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   }
 
   const deleteTally = (id: string) => {
+    clearTallyAnimation(id)
     setTallies((current) => (current ?? []).filter((t) => t.id !== id))
     setEditingId(null)
     setIsEditingName(false)
@@ -3324,18 +3387,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
       }, 300)
     }
     
-    setAnimatingId(customAmountTallyId)
-    setAnimatingCount(newCount)
-    
-    const maxAnimals = Math.min(newCount, 20)
-    const lastAnimalStaggerDelay = (maxAnimals - 1) * 120
-    const animationDuration = 1200
-    const totalAnimationTime = lastAnimalStaggerDelay + animationDuration + 100
-    
-    setTimeout(() => {
-      setAnimatingId(null)
-      setAnimatingCount(0)
-    }, totalAnimationTime)
+    queueTallyAnimation(customAmountTallyId, newCount)
     
     setCustomAmountDialogOpen(false)
     setCustomAmountTallyId(null)
@@ -3730,8 +3782,9 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
                 ) : (
                   <TallyTile
                     tally={tally}
-                    isAnimating={animatingId === tally.id}
-                    animatingCount={animatingId === tally.id ? animatingCount : 0}
+                    isAnimating={Boolean(activeTallyAnimations[tally.id])}
+                    animatingCount={activeTallyAnimations[tally.id]?.count ?? 0}
+                    animationRunId={activeTallyAnimations[tally.id]?.runId ?? 0}
                     forcePeek={forcePeekAll}
                     forceFeeding={forceFeedingAll}
                     onIncrement={() => handleClick(tally.id)}
