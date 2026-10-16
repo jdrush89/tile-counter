@@ -268,6 +268,7 @@ const BASE_ANIMALS = [
   { id: 3, name: 'Bird', unlockAt: 0 },
   { id: 11, name: 'Banana', unlockAt: 0 },
   { id: 12, name: 'Squirrel', unlockAt: 0 },
+  { id: 22, name: 'Snail', unlockAt: 0 },
 ]
 
 const UNLOCKABLE_ANIMALS = [
@@ -457,6 +458,73 @@ function RunningSnake({ legPhase }: { legPhase: number }) {
         opacity="0.8"
       />
       <ellipse cx="6" cy={22 + wave1} rx="2" ry="1.5" fill="white" fillOpacity="0.8" />
+    </svg>
+  )
+}
+
+function RunningSnail({ legPhase }: { legPhase: number }) {
+  const glide = Math.sin(legPhase * 0.8) * 1.2
+  const bodyStretch = 1 + Math.sin(legPhase) * 0.025
+  const eyeWiggle = Math.sin(legPhase * 1.5) * 7
+  const shellRock = Math.sin(legPhase * 0.7) * 3
+
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${glide}) scale(${bodyStretch}, 1)`}>
+        <path
+          d="M4 32 Q12 29 21 31 Q29 33 36 30 Q42 27 47 30 Q45 35 36 35 L10 35 Q5 35 4 32 Z"
+          fill="white"
+          fillOpacity="0.72"
+        />
+        <ellipse cx="38" cy="28" rx="8" ry="6" fill="white" fillOpacity="0.9" />
+        <path
+          d="M7 34 Q14 37 22 34 Q30 37 38 34"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.45"
+        />
+        <g transform={`rotate(${shellRock}, 23, 22)`}>
+          <circle cx="23" cy="22" r="11" fill="white" fillOpacity="0.9" />
+          <path
+            d="M23 29 C15 29 14 18 21 16 C28 14 33 21 29 26 C26 30 20 27 21 23 C22 20 26 20 27 23"
+            stroke="oklch(0.25 0 0)"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            fill="none"
+            opacity="0.28"
+          />
+          <path
+            d="M14 24 Q17 15 26 12"
+            stroke="white"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            fill="none"
+            opacity="0.55"
+          />
+        </g>
+        <g transform={`rotate(${eyeWiggle}, 36, 25)`}>
+          <path d="M36 25 Q35 17 33 11" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.9" />
+          <circle cx="33" cy="10" r="2.4" fill="white" fillOpacity="0.95" />
+          <circle cx="33" cy="10" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.75" />
+        </g>
+        <g transform={`rotate(${-eyeWiggle}, 41, 25)`}>
+          <path d="M41 25 Q42 17 44 11" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.9" />
+          <circle cx="44" cy="10" r="2.4" fill="white" fillOpacity="0.95" />
+          <circle cx="44" cy="10" r="1" fill="oklch(0.25 0 0)" fillOpacity="0.75" />
+        </g>
+        <path
+          d="M36 29 Q39 31 42 29"
+          stroke="oklch(0.25 0 0)"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.45"
+        />
+        <circle cx="35" cy="27" r="1" fill="white" fillOpacity="0.55" />
+        <circle cx="42" cy="27" r="1" fill="white" fillOpacity="0.55" />
+      </g>
     </svg>
   )
 }
@@ -1456,6 +1524,8 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       return <SwimmingWhale legPhase={legPhase} />
     case 21:
       return <RunningMousePat legPhase={legPhase} />
+    case 22:
+      return <RunningSnail legPhase={legPhase} />
     default:
       return <RunningDog legPhase={legPhase} />
   }
