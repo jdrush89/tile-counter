@@ -239,19 +239,19 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
     setPhase('running')
   }
 
-  const incrementTrackedCount = () => {
+  const incrementTrackedCount = (amount = 1) => {
     setTrackedCount((current) => {
-      const next = current + 1
+      const next = current + amount
       trackedCountRef.current = next
       return next
     })
   }
 
-  const incrementTrackedAnimal = (animalId: number) => {
+  const incrementTrackedAnimal = (animalId: number, amount = 1) => {
     setTrackedAnimalCounts((current) => {
       const next = {
         ...current,
-        [animalId]: (current[animalId] ?? 0) + 1,
+        [animalId]: (current[animalId] ?? 0) + amount,
       }
       trackedAnimalCountsRef.current = next
       return next
@@ -604,17 +604,24 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                   </div>
 
                   {(phase === 'ready' || phase === 'running') && (
-                    <aside className="order-1 lg:order-2 p-4 md:p-5 border-b lg:border-b-0 lg:border-l border-border bg-card/70">
+                    <aside className="order-1 lg:order-2 p-4 md:p-5 border-b lg:border-b-0 lg:border-l border-border bg-card/70 flex flex-col gap-3">
+                      <p className="text-xs text-center text-muted-foreground">
+                        Tap or left-click for +1. Right-click for +5.
+                      </p>
                       {round.mode === 'most' ? (
-                        <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 h-full">
+                        <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 flex-1">
                           {round.animals.map((animal) => (
                             <button
                               key={animal.id}
                               type="button"
                               onClick={() => incrementTrackedAnimal(animal.id)}
+                              onContextMenu={(event) => {
+                                event.preventDefault()
+                                if (phase === 'running') incrementTrackedAnimal(animal.id, 5)
+                              }}
                               disabled={phase !== 'running'}
                               className="min-h-28 rounded-2xl border-2 border-primary/30 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex flex-col items-center justify-center gap-1 p-2"
-                              aria-label={`${animal.name} count: ${trackedAnimalCounts[animal.id] ?? 0}. Tap to add one.`}
+                              aria-label={`${animal.name} count: ${trackedAnimalCounts[animal.id] ?? 0}. Tap or left-click to add one; right-click to add five.`}
                             >
                               <span className="w-12 h-12">{renderAnimal(animal.id, 0)}</span>
                               <span className="text-xs font-semibold truncate max-w-full">{animal.name}</span>
@@ -627,10 +634,14 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                       ) : (
                         <button
                           type="button"
-                          onClick={incrementTrackedCount}
+                          onClick={() => incrementTrackedCount()}
+                          onContextMenu={(event) => {
+                            event.preventDefault()
+                            if (phase === 'running') incrementTrackedCount(5)
+                          }}
                           disabled={phase !== 'running'}
-                          className="w-full h-32 lg:h-full min-h-32 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex lg:flex-col items-center justify-center gap-4 lg:gap-2"
-                          aria-label={`Count tracker: ${trackedCount}. Tap to add one.`}
+                          className="w-full h-32 lg:h-auto lg:flex-1 min-h-32 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex lg:flex-col items-center justify-center gap-4 lg:gap-2"
+                          aria-label={`Count tracker: ${trackedCount}. Tap or left-click to add one; right-click to add five.`}
                         >
                           <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                             Tap counter
