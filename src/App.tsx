@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon, Camera, DownloadSimple, UploadSimple, FloppyDisk } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon, Camera, DownloadSimple, UploadSimple, FloppyDisk, Target } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
@@ -13,6 +13,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { isNativePlatform, useStorage, useDeviceUserId, getPlatform } from '@/hooks/use-storage'
 import { usePurchases } from '@/hooks/use-purchases'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { DailyChallenge } from '@/DailyChallenge'
 
 interface TallyEvent {
   tallyId: string
@@ -3412,6 +3413,12 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
               <CalendarBlank size={16} weight="bold" />
               History
             </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href={`${import.meta.env.BASE_URL}daily/`} className="gap-2">
+                <Target size={16} weight="bold" />
+                Daily
+              </a>
+            </Button>
           </div>
           
 
@@ -3923,8 +3930,34 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
 function App() {
   const user = useCurrentUser()
   const { theme, setTheme, isLoaded: themeLoaded } = useTheme()
+  const isDailyChallenge = window.location.pathname.replace(/\/+$/, '').endsWith('/daily')
 
-  if (!user || !themeLoaded) {
+  if (!themeLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 animate-pulse" />
+          <p className="text-muted-foreground">Loading your tallies...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isDailyChallenge) {
+    return (
+      <>
+        <DailyChallenge
+          animals={ALL_ANIMALS}
+          renderAnimal={(animalId, legPhase) => (
+            <RunningAnimal variant={animalId} legPhase={legPhase} />
+          )}
+        />
+        <Toaster position="top-center" />
+      </>
+    )
+  }
+
+  if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">

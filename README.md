@@ -26,3 +26,5 @@ VITE_BASE_PATH=/tile-counter/ npm run build
 Pushes to `main` deploy the Pages build to `https://jdrush89.github.io/tile-counter/`.
 
 Web data is local to each browser and origin. Use the snapshot export and import features to move data between the retired Spark deployment and GitHub Pages.
+
+The daily challenge is available at `/daily/` relative to the deployed app URL. Its three rounds are generated deterministically from the player's local calendar date.

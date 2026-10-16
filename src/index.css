@@ -78,3 +78,73 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+
+@keyframes daily-animal-run {
+  from {
+    left: -8rem;
+  }
+
+  to {
+    left: calc(100% + 8rem);
+  }
+}
+
+@keyframes daily-animal-dance {
+  0% {
+    left: -8rem;
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+
+  40% {
+    left: calc(50% - 2rem);
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+
+  45% {
+    left: calc(50% - 2rem);
+    transform: translateY(-0.8rem) rotate(-12deg) scale(1.08);
+  }
+
+  50% {
+    left: calc(50% - 2rem);
+    transform: translateY(0.35rem) rotate(12deg) scale(0.96);
+  }
+
+  55% {
+    left: calc(50% - 2rem);
+    transform: translateY(-0.8rem) rotate(-12deg) scale(1.08);
+  }
+
+  60% {
+    left: calc(50% - 2rem);
+    transform: translateY(0.35rem) rotate(12deg) scale(0.96);
+  }
+
+  65% {
+    left: calc(50% - 2rem);
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+
+  100% {
+    left: calc(100% + 8rem);
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+}
+
+.daily-animal-run {
+  left: -8rem;
+  will-change: left, transform;
+  animation-name: daily-animal-run;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+.daily-animal-run.daily-animal-dance {
+  animation-name: daily-animal-dance;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-animal-run {
+    animation-timing-function: steps(12);
+  }
+}
