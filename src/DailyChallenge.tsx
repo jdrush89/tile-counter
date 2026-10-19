@@ -583,7 +583,10 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                               min="0"
                               type="number"
                               value={answer}
-                              onChange={(event) => setAnswer(event.target.value)}
+                              onChange={(event) => {
+                                const nextAnswer = event.target.value.replace(/^0+(?=\d)/, '')
+                                setAnswer(nextAnswer)
+                              }}
                               className="h-16 text-3xl text-center"
                               aria-label={round.mode === 'total' ? 'Total number of animals' : `Number of ${round.target.name}s`}
                             />
