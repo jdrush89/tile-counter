@@ -79,6 +79,203 @@
   }
 }
 
+.animal-sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  --animal-primary: oklch(0.78 0.08 70);
+  --animal-secondary: oklch(0.9 0.05 80);
+  --animal-accent: oklch(0.96 0.025 85);
+}
+
+.animal-sprite > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.animal-sprite [fill="white"] {
+  fill: var(--animal-primary);
+}
+
+.animal-sprite [stroke="white"] {
+  stroke: var(--animal-primary);
+}
+
+.animal-sprite [fill="white"][fill-opacity="0.8"],
+.animal-sprite [fill="white"][fill-opacity="0.85"] {
+  fill: var(--animal-secondary);
+  fill-opacity: 0.95;
+}
+
+.animal-sprite [stroke="white"][opacity="0.8"],
+.animal-sprite [stroke="white"][opacity="0.85"] {
+  stroke: var(--animal-secondary);
+  opacity: 0.95;
+}
+
+.animal-sprite [fill="white"][fill-opacity="0.25"],
+.animal-sprite [fill="white"][fill-opacity="0.3"],
+.animal-sprite [fill="white"][fill-opacity="0.5"],
+.animal-sprite [fill="white"][fill-opacity="0.55"],
+.animal-sprite [fill="white"][fill-opacity="0.6"],
+.animal-sprite [fill="white"][fill-opacity="0.65"],
+.animal-sprite [fill="white"][fill-opacity="0.7"],
+.animal-sprite [fill="white"][fill-opacity="0.72"],
+.animal-sprite [fill="white"][fill-opacity="0.75"] {
+  fill: var(--animal-accent);
+  fill-opacity: 0.9;
+}
+
+.animal-sprite [stroke="white"][opacity="0.5"],
+.animal-sprite [stroke="white"][opacity="0.55"],
+.animal-sprite [stroke="white"][opacity="0.6"],
+.animal-sprite [stroke="white"][opacity="0.65"],
+.animal-sprite [stroke="white"][opacity="0.7"],
+.animal-sprite [stroke="white"][opacity="0.72"],
+.animal-sprite [stroke="white"][opacity="0.75"] {
+  stroke: var(--animal-accent);
+  opacity: 0.9;
+}
+
+.animal-sprite-0 {
+  --animal-primary: oklch(0.58 0.13 55);
+  --animal-secondary: oklch(0.76 0.11 72);
+  --animal-accent: oklch(0.93 0.045 82);
+}
+
+.animal-sprite-1 {
+  --animal-primary: oklch(0.7 0.17 58);
+  --animal-secondary: oklch(0.86 0.1 72);
+  --animal-accent: oklch(0.94 0.06 25);
+}
+
+.animal-sprite-2 {
+  --animal-primary: oklch(0.82 0.025 255);
+  --animal-secondary: oklch(0.93 0.06 15);
+  --animal-accent: oklch(0.98 0.015 85);
+}
+
+.animal-sprite-3 {
+  --animal-primary: oklch(0.65 0.15 240);
+  --animal-secondary: oklch(0.82 0.13 215);
+  --animal-accent: oklch(0.88 0.17 85);
+}
+
+.animal-sprite-4 {
+  --animal-primary: oklch(0.62 0.17 145);
+  --animal-secondary: oklch(0.8 0.18 125);
+  --animal-accent: oklch(0.72 0.2 30);
+}
+
+.animal-sprite-5 {
+  --animal-primary: oklch(0.36 0.025 255);
+  --animal-secondary: oklch(0.9 0.035 80);
+  --animal-accent: oklch(0.82 0.11 20);
+}
+
+.animal-sprite-6 {
+  --animal-primary: oklch(0.42 0.03 255);
+  --animal-secondary: oklch(0.6 0.035 250);
+  --animal-accent: oklch(0.78 0.07 70);
+}
+
+.animal-sprite-7 {
+  --animal-primary: oklch(0.3 0.045 285);
+  --animal-secondary: oklch(0.46 0.09 300);
+  --animal-accent: oklch(0.82 0.16 85);
+}
+
+.animal-sprite-8 {
+  --animal-primary: oklch(0.55 0.18 145);
+  --animal-secondary: oklch(0.72 0.16 175);
+  --animal-accent: oklch(0.78 0.18 45);
+}
+
+.animal-sprite-9 {
+  --animal-primary: oklch(0.72 0.16 75);
+  --animal-secondary: oklch(0.84 0.12 88);
+  --animal-accent: oklch(0.94 0.045 80);
+}
+
+.animal-sprite-10 {
+  --animal-primary: oklch(0.5 0.13 185);
+  --animal-secondary: oklch(0.68 0.15 165);
+  --animal-accent: oklch(0.67 0.16 305);
+}
+
+.animal-sprite-11 {
+  --animal-primary: oklch(0.9 0.18 98);
+  --animal-secondary: oklch(0.79 0.18 78);
+  --animal-accent: oklch(0.97 0.055 95);
+}
+
+.animal-sprite-12 {
+  --animal-primary: oklch(0.6 0.15 48);
+  --animal-secondary: oklch(0.75 0.12 65);
+  --animal-accent: oklch(0.92 0.055 78);
+}
+
+.animal-sprite-13 {
+  --animal-primary: oklch(0.45 0.1 48);
+  --animal-secondary: oklch(0.6 0.12 55);
+  --animal-accent: oklch(0.78 0.08 70);
+}
+
+.animal-sprite-14 {
+  --animal-primary: oklch(0.55 0.18 150);
+  --animal-secondary: oklch(0.76 0.18 125);
+  --animal-accent: oklch(0.83 0.16 85);
+}
+
+.animal-sprite-15 {
+  --animal-primary: oklch(0.62 0.08 140);
+  --animal-secondary: oklch(0.52 0.12 305);
+  --animal-accent: oklch(0.7 0.18 25);
+}
+
+.animal-sprite-16 {
+  --animal-primary: oklch(0.48 0.13 125);
+  --animal-secondary: oklch(0.64 0.15 135);
+  --animal-accent: oklch(0.9 0.06 82);
+}
+
+.animal-sprite-17 {
+  --animal-primary: oklch(0.46 0.15 145);
+  --animal-secondary: oklch(0.66 0.17 130);
+  --animal-accent: oklch(0.88 0.07 90);
+}
+
+.animal-sprite-18 {
+  --animal-primary: oklch(0.4 0.14 255);
+  --animal-secondary: oklch(0.62 0.17 225);
+  --animal-accent: oklch(0.88 0.18 95);
+}
+
+.animal-sprite-19 {
+  --animal-primary: oklch(0.55 0.08 235);
+  --animal-secondary: oklch(0.72 0.07 225);
+  --animal-accent: oklch(0.94 0.025 220);
+}
+
+.animal-sprite-20 {
+  --animal-primary: oklch(0.45 0.14 245);
+  --animal-secondary: oklch(0.65 0.13 225);
+  --animal-accent: oklch(0.86 0.08 210);
+}
+
+.animal-sprite-21 {
+  --animal-primary: oklch(0.72 0.035 255);
+  --animal-secondary: oklch(0.68 0.17 135);
+  --animal-accent: oklch(0.9 0.07 25);
+}
+
+.animal-sprite-22 {
+  --animal-primary: oklch(0.76 0.1 70);
+  --animal-secondary: oklch(0.7 0.16 35);
+  --animal-accent: oklch(0.93 0.065 82);
+}
+
 @keyframes daily-animal-run {
   from {
     left: -8rem;

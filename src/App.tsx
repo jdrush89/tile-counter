@@ -1479,56 +1479,87 @@ function RunningMousePat({ legPhase }: { legPhase: number }) {
 }
 
 function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: number }) {
+  let animal: React.ReactNode
+
   switch (variant) {
     case 0:
-      return <RunningDog legPhase={legPhase} />
+      animal = <RunningDog legPhase={legPhase} />
+      break
     case 1:
-      return <RunningCat legPhase={legPhase} />
+      animal = <RunningCat legPhase={legPhase} />
+      break
     case 2:
-      return <RunningBunny legPhase={legPhase} />
+      animal = <RunningBunny legPhase={legPhase} />
+      break
     case 3:
-      return <RunningBird legPhase={legPhase} />
+      animal = <RunningBird legPhase={legPhase} />
+      break
     case 4:
-      return <RunningSnake legPhase={legPhase} />
+      animal = <RunningSnake legPhase={legPhase} />
+      break
     case 5:
-      return <RunningOstrich legPhase={legPhase} />
+      animal = <RunningOstrich legPhase={legPhase} />
+      break
     case 6:
-      return <RunningGorilla legPhase={legPhase} />
+      animal = <RunningGorilla legPhase={legPhase} />
+      break
     case 7:
-      return <RunningPanther legPhase={legPhase} />
+      animal = <RunningPanther legPhase={legPhase} />
+      break
     case 8:
-      return <RunningDragon legPhase={legPhase} />
+      animal = <RunningDragon legPhase={legPhase} />
+      break
     case 9:
-      return <RunningGriffin legPhase={legPhase} />
+      animal = <RunningGriffin legPhase={legPhase} />
+      break
     case 10:
-      return <RunningCthulhu legPhase={legPhase} />
+      animal = <RunningCthulhu legPhase={legPhase} />
+      break
     case 11:
-      return <RunningBanana legPhase={legPhase} />
+      animal = <RunningBanana legPhase={legPhase} />
+      break
     case 12:
-      return <RunningSquirrel legPhase={legPhase} />
+      animal = <RunningSquirrel legPhase={legPhase} />
+      break
     case 13:
-      return <RunningSasquatch legPhase={legPhase} />
+      animal = <RunningSasquatch legPhase={legPhase} />
+      break
     case 14:
-      return <RunningLizardKing legPhase={legPhase} />
+      animal = <RunningLizardKing legPhase={legPhase} />
+      break
     case 15:
-      return <RunningZombie legPhase={legPhase} />
+      animal = <RunningZombie legPhase={legPhase} />
+      break
     case 16:
-      return <RunningTRex legPhase={legPhase} />
+      animal = <RunningTRex legPhase={legPhase} />
+      break
     case 17:
-      return <RunningAlligator legPhase={legPhase} />
+      animal = <RunningAlligator legPhase={legPhase} />
+      break
     case 18:
-      return <SwimmingAnglerfish legPhase={legPhase} />
+      animal = <SwimmingAnglerfish legPhase={legPhase} />
+      break
     case 19:
-      return <SwimmingShark legPhase={legPhase} />
+      animal = <SwimmingShark legPhase={legPhase} />
+      break
     case 20:
-      return <SwimmingWhale legPhase={legPhase} />
+      animal = <SwimmingWhale legPhase={legPhase} />
+      break
     case 21:
-      return <RunningMousePat legPhase={legPhase} />
+      animal = <RunningMousePat legPhase={legPhase} />
+      break
     case 22:
-      return <RunningSnail legPhase={legPhase} />
+      animal = <RunningSnail legPhase={legPhase} />
+      break
     default:
-      return <RunningDog legPhase={legPhase} />
+      animal = <RunningDog legPhase={legPhase} />
   }
+
+  return (
+    <span className={`animal-sprite animal-sprite-${variant}`}>
+      {animal}
+    </span>
+  )
 }
 
 function PeekingAnimal({ variant, side }: { variant: number; side: 'left' | 'right' }) {
@@ -3510,11 +3541,11 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
         <header className="text-center space-y-2 py-6">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground flex items-center justify-center gap-3">
             <span className="w-10 h-10 md:w-12 md:h-12 inline-block" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>
-              <RunningBanana legPhase={0} />
+              <RunningAnimal variant={11} legPhase={0} />
             </span>
             Tally Me Banana
             <span className="w-10 h-10 md:w-12 md:h-12 inline-block" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))', transform: 'scaleX(-1)' }}>
-              <RunningBanana legPhase={0} />
+              <RunningAnimal variant={11} legPhase={0} />
             </span>
           </h1>
           <p className="text-muted-foreground">
