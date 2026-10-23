@@ -32,6 +32,7 @@ type RoundMode = 'single' | 'target' | 'most' | 'total'
 
 interface DailyRound {
   animals: DailyAnimal[]
+  animalCounts: Record<number, number>
   mode: RoundMode
   number: number
   total: number
@@ -163,6 +164,7 @@ function createDailyRounds(dateKey: string, animals: DailyAnimal[]) {
 
     return {
       animals: selectedAnimals,
+      animalCounts: Object.fromEntries(counts),
       mode: settings.mode,
       number: roundIndex + 1,
       total,
@@ -177,6 +179,19 @@ function createDailyRounds(dateKey: string, animals: DailyAnimal[]) {
 function scoreAnswer(answer: number, correct: number) {
   const difference = Math.abs(answer - correct)
   return Math.max(0, Math.round(100 * (1 - difference / Math.max(1, correct))))
+}
+
+function scoreMostCommonAnswer(round: DailyRound, animalId: number) {
+  if (animalId === round.target.id) return 100
+
+  const selectedCount = round.animalCounts[animalId] ?? 0
+  const secondHighestCount = Math.max(
+    ...round.animals
+      .filter((animal) => animal.id !== round.target.id)
+      .map((animal) => round.animalCounts[animal.id] ?? 0)
+  )
+
+  return selectedCount === secondHighestCount ? 50 : 0
 }
 
 function getAccuracyMessage(answer: number, correct: number) {
@@ -265,7 +280,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
     const parsedAnswer = Number.parseInt(answer, 10)
     if (round.mode === 'most') {
       if (!round.animals.some((animal) => animal.id === parsedAnswer)) return
-      setScores((current) => [...current, parsedAnswer === round.target.id ? 100 : 0])
+      setScores((current) => [...current, scoreMostCommonAnswer(round, parsedAnswer)])
       setPhase('feedback')
       return
     }
@@ -321,6 +336,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
   const maxScore = rounds.length * 100
   const finalPercentage = Math.round((finalScore / maxScore) * 100)
   const selectedAnimal = round.animals.find((animal) => animal.id === parsedAnswer)
+  const latestScore = scores[scores.length - 1]
   const formattedDate = new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'long',
@@ -620,7 +636,9 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                               {round.mode === 'most'
                                 ? parsedAnswer === round.target.id
                                   ? 'Correct choice!'
-                                  : 'Not quite!'
+                                  : latestScore === 50
+                                    ? 'Second most!'
+                                    : 'Not quite!'
                                 : getAccuracyMessage(parsedAnswer, round.targetCount)}
                             </h3>
                             <p className="text-muted-foreground mt-2">
@@ -628,7 +646,9 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                                 <>
                                   <strong className="text-foreground">{round.target.name}</strong> appeared most
                                   {selectedAnimal && selectedAnimal.id !== round.target.id
-                                    ? `; you chose ${selectedAnimal.name}.`
+                                    ? latestScore === 50
+                                      ? `; ${selectedAnimal.name} was the runner-up.`
+                                      : `; you chose ${selectedAnimal.name}.`
                                     : '.'}
                                 </>
                               ) : (
@@ -640,7 +660,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                             </p>
                           </div>
                           <div className="text-xl font-semibold">
-                            Round score: {scores[scores.length - 1]} / 100
+                            Round score: {latestScore} / 100
                           </div>
                           <Button size="lg" onClick={continueChallenge} className="gap-2">
                             {roundIndex === rounds.length - 1 ? 'See final score' : 'Next round'}
