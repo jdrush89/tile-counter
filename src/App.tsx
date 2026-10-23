@@ -2109,6 +2109,9 @@ function CalendarView({
   const [pendingDeletes, setPendingDeletes] = useState<Set<number>>(new Set())
 
   const getDateKey = (day: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  const selectedDailyChallengeAttempt = selectedDay === null
+    ? undefined
+    : dailyChallengeAttempts[getDateKey(selectedDay)]
 
   const getDailyNoteForTally = (day: number, tallyId: string) => {
     const dateKey = getDateKey(day)
@@ -2127,7 +2130,7 @@ function CalendarView({
   }
 
   const handleDayClick = (day: number, dayEvents: TallyEvent[]) => {
-    if (dayEvents.length === 0) return
+    if (dayEvents.length === 0 && !dailyChallengeAttempts[getDateKey(day)]) return
     setSelectedDay(day)
     setSelectedDayEvents(dayEvents)
     const notesMap: Record<number, string> = {}
@@ -2224,15 +2227,16 @@ function CalendarView({
     const eventsByTally = getEventsByTallyForDay(dayEvents)
     const hasEvents = dayEvents.length > 0
     const dailyChallengeAttempt = dailyChallengeAttempts[getDateKey(day)]
+    const hasDetails = hasEvents || Boolean(dailyChallengeAttempt)
     
     cells.push(
       <button 
         key={day}
         onClick={() => handleDayClick(day, dayEvents)}
-        disabled={!hasEvents}
+        disabled={!hasDetails}
         className={`h-20 md:h-24 border border-border/50 rounded-lg p-1.5 md:p-2 transition-colors text-left w-full ${
           isToday(day) ? 'bg-primary/10 border-primary/50' : 'bg-card/50'
-        } ${hasEvents ? 'hover:bg-card hover:border-primary/30 cursor-pointer' : 'cursor-default'}`}
+        } ${hasDetails ? 'hover:bg-card hover:border-primary/30 cursor-pointer' : 'cursor-default'}`}
       >
         <div className={`text-xs md:text-sm font-medium mb-1 ${isToday(day) ? 'text-primary' : 'text-muted-foreground'}`}>
           {day}
@@ -2329,11 +2333,11 @@ function CalendarView({
         </div>
 
         <div className="mt-4 text-xs text-muted-foreground text-center">
-          Click on a day to view details and edit notes
+          Click on a day to view tally and daily challenge details
         </div>
       </div>
 
-      <Dialog open={selectedDayEvents.length > 0} onOpenChange={(open) => {
+      <Dialog open={selectedDay !== null} onOpenChange={(open) => {
         if (!open) {
           setSelectedDayEvents([])
           setSelectedDay(null)
@@ -2346,7 +2350,10 @@ function CalendarView({
               {selectedDay && `${monthNames[month]} ${selectedDay}, ${year}`}
             </DialogTitle>
             <DialogDescription className="flex items-center justify-between">
-              <span>{selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'entry' : 'entries'} on this day</span>
+              <span>
+                {selectedDayEvents.length} tally {selectedDayEvents.length === 1 ? 'entry' : 'entries'}
+                {selectedDailyChallengeAttempt ? ' • Daily challenge completed' : ''}
+              </span>
               {Object.keys(getEventsByTallyForDay(selectedDayEvents)).length > 1 && (
                 <Button
                   variant="ghost"
@@ -2369,9 +2376,30 @@ function CalendarView({
               )}
             </DialogDescription>
           </DialogHeader>
-          {selectedDayEvents.length > 0 && (
+          {selectedDay !== null && (
             <>
               <div className="space-y-4 pt-2 overflow-y-auto flex-1 min-h-0">
+                {selectedDailyChallengeAttempt && (
+                  <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+                    <div className="rounded-full bg-amber-500/20 p-2 text-amber-600 dark:text-amber-400">
+                      <Trophy size={24} weight="fill" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-foreground">Daily Animal Dash</div>
+                      <div className="text-xs text-muted-foreground">
+                        First attempt completed at {formatEventTime(selectedDailyChallengeAttempt.completedAt)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                        {selectedDailyChallengeAttempt.score}/{selectedDailyChallengeAttempt.maxScore}
+                      </div>
+                      <div className="text-xs text-muted-foreground tabular-nums">
+                        {Math.round((selectedDailyChallengeAttempt.score / selectedDailyChallengeAttempt.maxScore) * 100)}%
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { tally, events: tallyEvents }]) => {
                   const activeEvents = tallyEvents.filter(e => !pendingDeletes.has(e.timestamp))
                   const editedCount = activeEvents.reduce((sum, e) => {
@@ -2526,18 +2554,26 @@ function CalendarView({
               </div>
               
               <div className="flex justify-end gap-2 pt-4 border-t border-border/50 shrink-0">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedDayEvents([])
-                    setSelectedDay(null)
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveNotes}>
-                  Save Changes
-                </Button>
+                {selectedDayEvents.length > 0 ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedDayEvents([])
+                        setSelectedDay(null)
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveNotes}>
+                      Save Changes
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={() => setSelectedDay(null)}>
+                    Close
+                  </Button>
+                )}
               </div>
             </>
           )}
