@@ -271,6 +271,7 @@ const BASE_ANIMALS = [
   { id: 22, name: 'Snail', unlockAt: 0 },
   { id: 23, name: 'Germ', unlockAt: 0 },
   { id: 24, name: 'Beer', unlockAt: 0 },
+  { id: 25, name: 'Walrus', unlockAt: 0 },
 ]
 
 const UNLOCKABLE_ANIMALS = [
@@ -582,7 +583,6 @@ function RunningBeer({ legPhase }: { legPhase: number }) {
           <circle cx="43" cy="25" r="2" fill="white" fillOpacity="0.95" />
         </g>
         <path d="M17 10 L17 31 Q25 34 33 31 L33 10 Z" fill="white" fillOpacity="0.82" />
-        <path d="M33 14 Q41 15 40 23 Q39 29 33 28" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
         <path d="M18 13 Q25 16 32 13 L32 18 Q25 21 18 18 Z" fill="white" fillOpacity="0.55" />
         <ellipse cx="25" cy="10" rx="9" ry="4" fill="white" fillOpacity="0.7" />
         <circle cx="19" cy="8" r="3" fill="white" fillOpacity="0.7" />
@@ -599,6 +599,31 @@ function RunningBeer({ legPhase }: { legPhase: number }) {
           <line x1="29" y1="31" x2="31" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
           <ellipse cx="32" cy="38" rx="3" ry="1.5" fill="white" fillOpacity="0.95" />
         </g>
+      </g>
+    </svg>
+  )
+}
+
+function RunningWalrus({ legPhase }: { legPhase: number }) {
+  const flipperSwing = Math.sin(legPhase) * 12
+  const bob = Math.sin(legPhase * 2) * 0.8
+
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${bob})`}>
+        <path d="M12 28 Q5 26 3 31 Q5 34 12 33 Q7 36 11 37 Q18 37 21 31" fill="white" fillOpacity="0.9" />
+        <ellipse cx="22" cy="24" rx="15" ry="10" fill="white" fillOpacity="0.9" />
+        <g transform={`rotate(${flipperSwing}, 19, 28)`}>
+          <path d="M19 27 Q14 32 17 36 Q24 36 27 30 Z" fill="white" fillOpacity="0.8" />
+        </g>
+        <circle cx="34" cy="19" r="9" fill="white" fillOpacity="0.9" />
+        <path d="M29 14 L32 15 M36 15 L39 14" stroke="oklch(0.25 0 0)" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="31" cy="17" r="1.2" fill="oklch(0.25 0 0)" />
+        <circle cx="37" cy="17" r="1.2" fill="oklch(0.25 0 0)" />
+        <ellipse cx="34" cy="22" rx="6" ry="4" fill="white" fillOpacity="0.8" />
+        <path d="M31 24 L32 32 L34 24 M35 24 L37 32 L38 24" fill="white" fillOpacity="0.7" />
+        <ellipse cx="34" cy="21" rx="2" ry="1.2" fill="oklch(0.25 0 0)" />
+        <path d="M32 25 Q34 23 36 25 M29 21 L23 19 M29 23 L23 23 M39 21 L45 19 M39 23 L45 23" stroke="oklch(0.25 0 0)" strokeWidth="0.9" strokeLinecap="round" fill="none" opacity="0.7" />
       </g>
     </svg>
   )
@@ -1631,6 +1656,9 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       break
     case 24:
       animal = <RunningBeer legPhase={legPhase} />
+      break
+    case 25:
+      animal = <RunningWalrus legPhase={legPhase} />
       break
     default:
       animal = <RunningDog legPhase={legPhase} />
