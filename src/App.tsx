@@ -269,6 +269,8 @@ const BASE_ANIMALS = [
   { id: 11, name: 'Banana', unlockAt: 0 },
   { id: 12, name: 'Squirrel', unlockAt: 0 },
   { id: 22, name: 'Snail', unlockAt: 0 },
+  { id: 23, name: 'Germ', unlockAt: 0 },
+  { id: 24, name: 'Beer', unlockAt: 0 },
 ]
 
 const UNLOCKABLE_ANIMALS = [
@@ -524,6 +526,79 @@ function RunningSnail({ legPhase }: { legPhase: number }) {
         />
         <circle cx="35" cy="27" r="1" fill="white" fillOpacity="0.55" />
         <circle cx="42" cy="27" r="1" fill="white" fillOpacity="0.55" />
+      </g>
+    </svg>
+  )
+}
+
+function RunningGerm({ legPhase }: { legPhase: number }) {
+  const pulse = 1 + Math.sin(legPhase * 2) * 0.04
+  const wobble = Math.sin(legPhase) * 4
+
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(${wobble * 0.15}, 0) scale(${pulse}, ${pulse})`} style={{ transformOrigin: '25px 20px' }}>
+        <circle cx="25" cy="20" r="10" fill="white" fillOpacity="0.92" />
+        <circle cx="21" cy="17" r="2" fill="oklch(0.25 0 0)" fillOpacity="0.25" />
+        <circle cx="29" cy="17" r="2" fill="oklch(0.25 0 0)" fillOpacity="0.25" />
+        <circle cx="25" cy="24" r="2.5" fill="white" fillOpacity="0.55" />
+        <g transform={`rotate(${wobble}, 25, 20)`}>
+          <path d="M25 10 L25 3" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="25" cy="2" r="2" fill="white" fillOpacity="0.95" />
+          <path d="M34 13 L40 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="41" cy="6" r="2" fill="white" fillOpacity="0.95" />
+          <path d="M35 20 L44 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="46" cy="20" r="2" fill="white" fillOpacity="0.95" />
+          <path d="M34 27 L40 33" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="41" cy="34" r="2" fill="white" fillOpacity="0.95" />
+          <path d="M25 30 L25 37" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="25" cy="38" r="2" fill="white" fillOpacity="0.95" />
+          <path d="M16 27 L10 33" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="9" cy="34" r="2" fill="white" fillOpacity="0.95" />
+          <path d="M15 20 L6 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="4" cy="20" r="2" fill="white" fillOpacity="0.95" />
+          <path d="M16 13 L10 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="9" cy="6" r="2" fill="white" fillOpacity="0.95" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
+function RunningBeer({ legPhase }: { legPhase: number }) {
+  const armSwing = Math.sin(legPhase) * 18
+  const legSwing = Math.sin(legPhase + Math.PI) * 22
+  const foamBob = Math.abs(Math.sin(legPhase)) * 1
+
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${-foamBob})`}>
+        <g transform={`rotate(${armSwing}, 16, 20)`}>
+          <path d="M16 18 L8 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="7" cy="25" r="2" fill="white" fillOpacity="0.95" />
+        </g>
+        <g transform={`rotate(${-armSwing}, 34, 20)`}>
+          <path d="M34 18 L42 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="43" cy="25" r="2" fill="white" fillOpacity="0.95" />
+        </g>
+        <path d="M17 10 L17 31 Q25 34 33 31 L33 10 Z" fill="white" fillOpacity="0.82" />
+        <path d="M33 14 Q41 15 40 23 Q39 29 33 28" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+        <path d="M18 13 Q25 16 32 13 L32 18 Q25 21 18 18 Z" fill="white" fillOpacity="0.55" />
+        <ellipse cx="25" cy="10" rx="9" ry="4" fill="white" fillOpacity="0.7" />
+        <circle cx="19" cy="8" r="3" fill="white" fillOpacity="0.7" />
+        <circle cx="24" cy="7" r="3.5" fill="white" fillOpacity="0.7" />
+        <circle cx="30" cy="8" r="3" fill="white" fillOpacity="0.7" />
+        <circle cx="22" cy="20" r="1.3" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <circle cx="28" cy="20" r="1.3" fill="oklch(0.25 0 0)" fillOpacity="0.7" />
+        <path d="M22 24 Q25 26 28 24" stroke="oklch(0.25 0 0)" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.55" />
+        <g transform={`rotate(${legSwing}, 21, 31)`}>
+          <line x1="21" y1="31" x2="19" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="18" cy="38" rx="3" ry="1.5" fill="white" fillOpacity="0.95" />
+        </g>
+        <g transform={`rotate(${-legSwing}, 29, 31)`}>
+          <line x1="29" y1="31" x2="31" y2="38" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="32" cy="38" rx="3" ry="1.5" fill="white" fillOpacity="0.95" />
+        </g>
       </g>
     </svg>
   )
@@ -1550,6 +1625,12 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       break
     case 22:
       animal = <RunningSnail legPhase={legPhase} />
+      break
+    case 23:
+      animal = <RunningGerm legPhase={legPhase} />
+      break
+    case 24:
+      animal = <RunningBeer legPhase={legPhase} />
       break
     default:
       animal = <RunningDog legPhase={legPhase} />
