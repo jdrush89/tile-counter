@@ -294,6 +294,12 @@
   --animal-accent: oklch(0.94 0.035 85);
 }
 
+.animal-sprite-26 {
+  --animal-primary: oklch(0.76 0.1 20);
+  --animal-secondary: oklch(0.86 0.09 25);
+  --animal-accent: oklch(0.94 0.05 35);
+}
+
 @keyframes daily-animal-run {
   from {
     left: -8rem;
