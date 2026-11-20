@@ -499,7 +499,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                     </div>
                   </div>
                   {phase === 'ready' && (
-                    <Button onClick={startRound} className="gap-2">
+                    <Button onClick={startRound} className="hidden sm:flex gap-2">
                       <Play size={17} weight="fill" />
                       Begin round
                     </Button>
@@ -509,11 +509,11 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                 <div className={
                   phase === 'ready' || phase === 'running'
                     ? round.mode === 'most'
-                      ? 'grid flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)] sm:grid-rows-1 sm:grid-cols-[minmax(0,1fr)_240px]'
-                      : 'grid flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)] sm:grid-rows-1 sm:grid-cols-[minmax(0,1fr)_200px]'
+                      ? 'grid flex-1 min-h-0 grid-rows-[minmax(0,1fr)_auto] sm:grid-rows-1 sm:grid-cols-[minmax(0,1fr)_240px]'
+                      : 'grid flex-1 min-h-0 grid-rows-[minmax(0,1fr)_auto] sm:grid-rows-1 sm:grid-cols-[minmax(0,1fr)_200px]'
                     : 'flex-1 min-h-0'
                 }>
-                  <div className="relative order-2 sm:order-1 min-h-[180px] sm:min-h-0 h-full overflow-hidden bg-gradient-to-b from-secondary/35 to-background">
+                  <div className="relative order-1 min-h-0 h-full overflow-hidden bg-gradient-to-b from-secondary/35 to-background">
                     <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/10 to-transparent" />
                     {[18, 35, 52, 69, 86].map((top) => (
                       <div
@@ -672,12 +672,18 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                   </div>
 
                   {(phase === 'ready' || phase === 'running') && (
-                    <aside className="order-1 sm:order-2 p-3 md:p-4 border-b sm:border-b-0 sm:border-l border-border bg-card/70 flex flex-col gap-2">
-                      <p className="text-xs text-center text-muted-foreground">
+                    <aside className="order-2 sm:order-2 p-3 md:p-4 border-t sm:border-t-0 sm:border-l border-border bg-card/70 flex flex-col gap-2">
+                      {phase === 'ready' && (
+                        <Button onClick={startRound} className="sm:hidden w-full gap-2">
+                          <Play size={17} weight="fill" />
+                          Begin round
+                        </Button>
+                      )}
+                      <p className={`text-xs text-center text-muted-foreground ${phase === 'ready' ? 'hidden sm:block' : ''}`}>
                         Tap or left-click for +1. Right-click for +5.
                       </p>
                       {round.mode === 'most' ? (
-                        <div className="grid grid-cols-3 sm:grid-cols-1 gap-2 flex-1">
+                        <div className={`${phase === 'ready' ? 'hidden sm:grid' : 'grid'} grid-cols-3 sm:grid-cols-1 gap-2 flex-1`}>
                           {round.animals.map((animal) => (
                             <button
                               key={animal.id}
@@ -708,7 +714,7 @@ export function DailyChallenge({ animals, renderAnimal }: DailyChallengeProps) {
                             if (phase === 'running') incrementTrackedCount(5)
                           }}
                           disabled={phase !== 'running'}
-                          className="w-full h-28 sm:h-auto sm:flex-1 min-h-28 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all flex sm:flex-col items-center justify-center gap-4 sm:gap-2"
+                          className={`${phase === 'ready' ? 'hidden sm:flex' : 'flex'} w-full h-28 sm:h-auto sm:flex-1 min-h-28 rounded-2xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 transition-all sm:flex-col items-center justify-center gap-4 sm:gap-2`}
                           aria-label={`Count tracker: ${trackedCount}. Tap or left-click to add one; right-click to add five.`}
                         >
                           <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
