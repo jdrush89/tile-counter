@@ -5,13 +5,12 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
-import { Plus, Trash, Minus, Check, PencilSimple, Lock, CurrencyDollar, Crown, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon, Camera, DownloadSimple, UploadSimple, FloppyDisk, Target } from '@phosphor-icons/react'
+import { Plus, Trash, Minus, Check, PencilSimple, Lock, Megaphone, PersonSimpleTaiChi, CalendarBlank, CaretLeft, CaretRight, X, NotePencil, Trophy, CaretDown, CaretUp, Palette, GearSix, Sun, Moon, Camera, DownloadSimple, UploadSimple, FloppyDisk, Target } from '@phosphor-icons/react'
 import { Textarea } from '@/components/ui/textarea'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'sonner'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { isNativePlatform, useStorage, useDeviceUserId, getPlatform } from '@/hooks/use-storage'
-import { usePurchases } from '@/hooks/use-purchases'
+import { useStorage, useDeviceUserId } from '@/hooks/use-storage'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DailyChallenge } from '@/DailyChallenge'
 import {
@@ -272,6 +271,7 @@ const BASE_ANIMALS = [
   { id: 23, name: 'Germ', unlockAt: 0 },
   { id: 24, name: 'Beer', unlockAt: 0 },
   { id: 25, name: 'Walrus', unlockAt: 0 },
+  { id: 26, name: 'Blobfish', unlockAt: 0 },
 ]
 
 const UNLOCKABLE_ANIMALS = [
@@ -283,20 +283,20 @@ const UNLOCKABLE_ANIMALS = [
   { id: 8, name: 'Dragon', unlockAt: 100 },
 ]
 
-const PREMIUM_ANIMALS = [
-  { id: 9, name: 'Griffin', price: 1.99 },
-  { id: 10, name: 'Cthulhu', price: 2.99 },
-  { id: 13, name: 'Sasquatch', price: 3.99 },
-  { id: 14, name: 'Lizard King', price: 4.99 },
-  { id: 15, name: 'Zombie', price: 2.49 },
-  { id: 16, name: 'T-Rex', price: 3.49 },
-  { id: 18, name: 'Anglerfish', price: 2.99 },
-  { id: 19, name: 'Shark', price: 2.99 },
-  { id: 20, name: 'Whale', price: 3.99 },
-  { id: 21, name: 'Mouse Pat', price: 2.99 },
+const FREE_ANIMALS = [
+  { id: 9, name: 'Griffin', unlockAt: 0 },
+  { id: 10, name: 'Cthulhu', unlockAt: 0 },
+  { id: 13, name: 'Sasquatch', unlockAt: 0 },
+  { id: 14, name: 'Lizard King', unlockAt: 0 },
+  { id: 15, name: 'Zombie', unlockAt: 0 },
+  { id: 16, name: 'T-Rex', unlockAt: 0 },
+  { id: 18, name: 'Anglerfish', unlockAt: 0 },
+  { id: 19, name: 'Shark', unlockAt: 0 },
+  { id: 20, name: 'Whale', unlockAt: 0 },
+  { id: 21, name: 'Mouse Pat', unlockAt: 0 },
 ]
 
-const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...PREMIUM_ANIMALS]
+const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...FREE_ANIMALS]
 
 function RunningDog({ legPhase }: { legPhase: number }) {
   const frontLegAngle = Math.sin(legPhase) * 35
@@ -624,6 +624,27 @@ function RunningWalrus({ legPhase }: { legPhase: number }) {
         <path d="M31 24 L32 32 L34 24 M35 24 L37 32 L38 24" fill="white" fillOpacity="0.7" />
         <ellipse cx="34" cy="21" rx="2" ry="1.2" fill="oklch(0.25 0 0)" />
         <path d="M32 25 Q34 23 36 25 M29 21 L23 19 M29 23 L23 23 M39 21 L45 19 M39 23 L45 23" stroke="oklch(0.25 0 0)" strokeWidth="0.9" strokeLinecap="round" fill="none" opacity="0.7" />
+      </g>
+    </svg>
+  )
+}
+
+function SwimmingBlobfish({ legPhase }: { legPhase: number }) {
+  const tailWag = Math.sin(legPhase) * 18
+  const bob = Math.sin(legPhase * 1.5) * 1.2
+
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${bob})`}>
+        <g transform={`rotate(${tailWag}, 14, 23)`}>
+          <path d="M15 23 Q7 15 3 17 Q7 23 3 30 Q9 31 15 26 Z" fill="white" fillOpacity="0.8" />
+        </g>
+        <path d="M12 21 Q15 10 29 10 Q43 10 46 21 Q48 30 39 33 Q30 37 19 32 Q11 29 12 21 Z" fill="white" fillOpacity="0.9" />
+        <path d="M17 25 Q15 32 22 32 Q25 31 26 28" fill="white" fillOpacity="0.8" />
+        <ellipse cx="32" cy="21" rx="4" ry="5" fill="white" fillOpacity="0.8" />
+        <circle cx="26" cy="17" r="1.5" fill="oklch(0.25 0 0)" />
+        <circle cx="38" cy="17" r="1.5" fill="oklch(0.25 0 0)" />
+        <path d="M27 29 Q32 25 38 29" stroke="oklch(0.25 0 0)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7" />
       </g>
     </svg>
   )
@@ -1659,6 +1680,9 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       break
     case 25:
       animal = <RunningWalrus legPhase={legPhase} />
+      break
+    case 26:
+      animal = <SwimmingBlobfish legPhase={legPhase} />
       break
     default:
       animal = <RunningDog legPhase={legPhase} />
@@ -3189,8 +3213,6 @@ function SettingsMenu({
 }
 
 function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode; setTheme: (theme: ThemeMode) => void }) {
-  const isNative = isNativePlatform()
-  
   const [tallies, setTallies, talliesLoaded] = useStorage<Tally[]>(`tallies-${user.id}`, [])
   const [purchasedAnimals, setPurchasedAnimals, purchasedAnimalsLoaded] = useStorage<number[]>(`purchased-animals-${user.id}`, [])
   const [tallyEvents, setTallyEvents, tallyEventsLoaded] = useStorage<TallyEvent[]>(`tally-events-${user.id}`, [])
@@ -3212,9 +3234,6 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   const isLongPressRef = useRef(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
-  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false)
-  const [animalToPurchase, setAnimalToPurchase] = useState<{ id: number; name: string; price: number } | null>(null)
-  const [purchaseTallyId, setPurchaseTallyId] = useState<string | null>(null)
   const [forcePeekAll, setForcePeekAll] = useState(false)
   const [forceFeedingAll, setForceFeedingAll] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -3228,9 +3247,6 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
   const [snapshotsDialogOpen, setSnapshotsDialogOpen] = useState(false)
   const isMobile = useIsMobile()
   
-  // In-app purchases hook
-  const { isPurchasing, purchaseAnimal, restorePurchases } = usePurchases()
-
   const currentTallies = tallies ?? []
   const currentPurchased = purchasedAnimals ?? []
   const currentEvents = tallyEvents ?? []
@@ -3242,13 +3258,6 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
     currentTallies.reduce((sum, t) => sum + t.count, 0),
     [currentTallies]
   )
-  
-  const isAnimalAvailable = (animal: typeof ALL_ANIMALS[number]) => {
-    if ('price' in animal) {
-      return currentPurchased.includes(animal.id)
-    }
-    return animal.unlockAt <= totalTallies
-  }
   
   const nextUnlock = useMemo(() => 
     UNLOCKABLE_ANIMALS.find(a => a.unlockAt > totalTallies),
@@ -3458,16 +3467,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
     const animal = ALL_ANIMALS.find(a => a.id === animalId)
     if (!animal) return
     
-    const isPremium = 'price' in animal
-    
-    if (isPremium && !currentPurchased.includes(animalId)) {
-      setAnimalToPurchase(animal as { id: number; name: string; price: number })
-      setPurchaseTallyId(tallyId)
-      setPurchaseDialogOpen(true)
-      return
-    }
-    
-    if (!isPremium && animal.unlockAt > totalTallies) {
+    if (animal.unlockAt > 0 && animal.unlockAt > totalTallies) {
       toast.error(`${animal.name} is locked`, {
         description: `Reach ${animal.unlockAt} total tallies to unlock.`,
       })
@@ -3475,56 +3475,6 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
     }
     
     updateTallyAnimal(tallyId, animalId)
-  }
-
-  const handlePurchase = async () => {
-    if (!animalToPurchase) return
-    
-    // Use the purchase system (fake on web, real on native)
-    const result = await purchaseAnimal(
-      animalToPurchase.id, 
-      animalToPurchase.name, 
-      animalToPurchase.price
-    )
-    
-    if (result.success) {
-      setPurchasedAnimals((current) => [...(current ?? []), animalToPurchase.id])
-      
-      if (purchaseTallyId) {
-        updateTallyAnimal(purchaseTallyId, animalToPurchase.id)
-      }
-      
-      toast.success(`${animalToPurchase.name} purchased!`, {
-        description: 'You can now use this animal on any tally tile.',
-      })
-    } else {
-      // Only show error if it wasn't a cancellation
-      if (result.error && result.error !== 'Purchase cancelled') {
-        toast.error('Purchase failed', {
-          description: result.error,
-        })
-      }
-    }
-    
-    setPurchaseDialogOpen(false)
-    setAnimalToPurchase(null)
-    setPurchaseTallyId(null)
-  }
-  
-  const handleRestorePurchases = async () => {
-    toast.loading('Restoring purchases...')
-    const restoredIds = await restorePurchases()
-    
-    if (restoredIds.length > 0) {
-      setPurchasedAnimals((current) => {
-        const existing = current ?? []
-        const newIds = restoredIds.filter(id => !existing.includes(id))
-        return [...existing, ...newIds]
-      })
-      toast.success(`Restored ${restoredIds.length} purchase(s)!`)
-    } else {
-      toast.info('No purchases to restore')
-    }
   }
 
   const deleteTally = (id: string) => {
@@ -3859,10 +3809,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
                             </SelectTrigger>
                             <SelectContent>
                               {ALL_ANIMALS.map((animal) => {
-                                const isPremium = 'price' in animal
-                                const isUnlocked = isPremium 
-                                  ? currentPurchased.includes(animal.id)
-                                  : animal.unlockAt <= totalTallies
+                                const isUnlocked = animal.unlockAt === 0 || animal.unlockAt <= totalTallies
                                 return (
                                   <SelectItem
                                     key={animal.id}
@@ -3872,13 +3819,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
                                     <span className="flex items-center gap-2">
                                       {isUnlocked ? (
                                         <span className="flex items-center gap-1.5">
-                                          {isPremium && <Crown size={14} className="text-amber-500" weight="fill" />}
                                           {animal.name}
-                                        </span>
-                                      ) : isPremium ? (
-                                        <span className="flex items-center gap-1.5 text-amber-600">
-                                          <CurrencyDollar size={14} weight="bold" />
-                                          {animal.name} (${(animal as { price: number }).price})
                                         </span>
                                       ) : (
                                         <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -4106,86 +4047,6 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={purchaseDialogOpen} onOpenChange={(open) => !isPurchasing && setPurchaseDialogOpen(open)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Crown size={20} className="text-amber-500" weight="fill" />
-              Premium Animal
-            </DialogTitle>
-            <DialogDescription>
-              Unlock this exclusive animal to use on your tallies.
-            </DialogDescription>
-          </DialogHeader>
-          {animalToPurchase && (
-            <div className="space-y-6 pt-4">
-              <div className="flex items-center justify-center">
-                <div 
-                  className="w-24 h-24 rounded-2xl flex items-center justify-center"
-                  style={{ backgroundColor: 'oklch(0.65 0.2 280)' }}
-                >
-                  <div className="w-20 h-20">
-                    <RunningAnimal variant={animalToPurchase.id} legPhase={0} />
-                  </div>
-                </div>
-              </div>
-              <div className="text-center space-y-1">
-                <h3 className="text-xl font-semibold">{animalToPurchase.name}</h3>
-                <p className="text-2xl font-bold text-primary">${animalToPurchase.price.toFixed(2)}</p>
-                {isNative && (
-                  <p className="text-xs text-muted-foreground">
-                    Payment processed securely via {getPlatform() === 'android' ? 'Google Play' : 'App Store'}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={isPurchasing}
-                    onClick={() => {
-                      setPurchaseDialogOpen(false)
-                      setAnimalToPurchase(null)
-                      setPurchaseTallyId(null)
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handlePurchase}
-                    disabled={isPurchasing}
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                  >
-                    {isPurchasing ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <CurrencyDollar size={16} weight="bold" className="mr-1" />
-                        Purchase
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {isNative && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-muted-foreground"
-                    onClick={handleRestorePurchases}
-                    disabled={isPurchasing}
-                  >
-                    Restore previous purchases
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 
