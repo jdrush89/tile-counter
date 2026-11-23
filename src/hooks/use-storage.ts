@@ -44,6 +44,21 @@ const loadCapacitor = async (): Promise<{ Capacitor: any; Preferences: any }> =>
   return capacitorLoadPromise
 }
 
+export async function readStorage<T>(key: string): Promise<T | null> {
+  const { Capacitor: cap, Preferences: prefs } = await loadCapacitor()
+  const native = cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()
+  const value = native && prefs ? (await prefs.get({ key })).value : window.localStorage.getItem(key)
+  return value === null ? null : JSON.parse(value) as T
+}
+
+export async function writeStorage<T>(key: string, value: T): Promise<void> {
+  const { Capacitor: cap, Preferences: prefs } = await loadCapacitor()
+  const native = cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()
+  const serialized = JSON.stringify(value)
+  if (native && prefs) await prefs.set({ key, value: serialized })
+  else window.localStorage.setItem(key, serialized)
+}
+
 export const isNativePlatform = () => {
   if (!isCapacitorEnvironment()) return false
   try {
