@@ -7,7 +7,7 @@
         "dev": "vite",
         "kill": "fuser -k 5000/tcp",
         "build": "tsc -b --noCheck && vite build",
-        "test": "node --test src/lib/account-data.test.ts",
+        "test": "node --test src/lib/*.test.ts",
         "lint": "eslint .",
         "optimize": "vite optimize",
         "preview": "vite preview",

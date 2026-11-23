@@ -23,6 +23,7 @@ import {
   type DailyChallengeAttempts,
 } from '@/lib/daily-challenge-storage'
 import type { Tally, TallyEvent, DailyTallyNote } from '@/lib/account-data'
+import { applyHistoryEdits, type HistoryEdits } from '@/lib/history'
 
 const COLORS = [
   'oklch(0.65 0.2 250)',
@@ -2137,20 +2138,14 @@ function CalendarView({
   dailyNotes,
   dailyChallengeAttempts,
   onClose,
-  onUpdateEventNote,
-  onUpdateDailyNote,
-  onDeleteEvent,
-  onUpdateEventChange
+  onSaveHistoryEdits
 }: { 
   events: TallyEvent[]
   tallies: Tally[]
   dailyNotes: DailyTallyNote[]
   dailyChallengeAttempts: DailyChallengeAttempts
   onClose: () => void
-  onUpdateEventNote: (timestamp: number, note: string) => void
-  onUpdateDailyNote: (date: string, tallyId: string, note: string) => void
-  onDeleteEvent: (timestamp: number) => void
-  onUpdateEventChange: (timestamp: number, newChange: number) => void
+  onSaveHistoryEdits: (edits: HistoryEdits) => boolean
 }) {
   const [currentDate, setCurrentDate] = useState(new Date())
   
@@ -2194,9 +2189,13 @@ function CalendarView({
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [editingNotes, setEditingNotes] = useState<Record<number, string>>({})
   const [editingDailyNotes, setEditingDailyNotes] = useState<Record<string, string>>({})
+  const [originalDailyNotes, setOriginalDailyNotes] = useState<Record<string, string>>({})
   const [collapsedTallies, setCollapsedTallies] = useState<Record<string, boolean>>({})
   const [editingChanges, setEditingChanges] = useState<Record<number, string>>({})
   const [pendingDeletes, setPendingDeletes] = useState<Set<number>>(new Set())
+  const [selectedEntries, setSelectedEntries] = useState<Set<number>>(new Set())
+  const [destinationDate, setDestinationDate] = useState('')
+  const [editingDates, setEditingDates] = useState<Record<number, string>>({})
 
   const getDateKey = (day: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   const selectedDailyChallengeAttempt = selectedDay === null
@@ -2225,13 +2224,16 @@ function CalendarView({
     setSelectedDayEvents(dayEvents)
     const notesMap: Record<number, string> = {}
     const changesMap: Record<number, string> = {}
-    dayEvents.forEach(e => {
-      notesMap[e.timestamp] = e.note || ''
-      changesMap[e.timestamp] = String(e.change)
+    dayEvents.forEach((e, index) => {
+      notesMap[index] = e.note || ''
+      changesMap[index] = String(e.change)
     })
     setEditingNotes(notesMap)
     setEditingChanges(changesMap)
     setPendingDeletes(new Set())
+    setSelectedEntries(new Set())
+    setDestinationDate('')
+    setEditingDates({})
     
     const dailyNotesMap: Record<string, string> = {}
     const tallyIds = [...new Set(dayEvents.map(e => e.tallyId))]
@@ -2239,6 +2241,7 @@ function CalendarView({
       dailyNotesMap[tallyId] = getDailyNoteForTally(day, tallyId)
     })
     setEditingDailyNotes(dailyNotesMap)
+    setOriginalDailyNotes(dailyNotesMap)
     setCollapsedTallies({})
   }
 
@@ -2266,39 +2269,34 @@ function CalendarView({
 
   const handleSaveNotes = () => {
     if (selectedDay === null) return
-    
-    pendingDeletes.forEach(timestamp => {
-      onDeleteEvent(timestamp)
+    const invalidChange = selectedDayEvents.some((_, index) =>
+      !pendingDeletes.has(index) && !/^-?\d+$/.test(editingChanges[index] ?? '')
+    )
+    if (invalidChange) {
+      toast.error('Entry amounts must be whole numbers.')
+      return
+    }
+    const saved = onSaveHistoryEdits({
+      sourceDate: getDateKey(selectedDay),
+      entries: selectedDayEvents.map((original, index) => ({
+        original,
+        note: editingNotes[index] ?? '',
+        change: pendingDeletes.has(index) ? original.change : Number(editingChanges[index]),
+        deleted: pendingDeletes.has(index),
+        destinationDate: editingDates[index],
+      })),
+      originalDailyNotes,
+      dailyNotes: editingDailyNotes,
     })
-    
-    selectedDayEvents.forEach(event => {
-      if (pendingDeletes.has(event.timestamp)) return
-      
-      const newNote = editingNotes[event.timestamp] || ''
-      if (newNote !== (event.note || '')) {
-        onUpdateEventNote(event.timestamp, newNote)
-      }
-      
-      const newChange = parseInt(editingChanges[event.timestamp]) || event.change
-      if (newChange !== event.change) {
-        onUpdateEventChange(event.timestamp, newChange)
-      }
-    })
-    
-    const dateKey = getDateKey(selectedDay)
-    Object.entries(editingDailyNotes).forEach(([tallyId, note]) => {
-      const existingNote = getDailyNoteForTally(selectedDay, tallyId)
-      if (note !== existingNote) {
-        onUpdateDailyNote(dateKey, tallyId, note)
-      }
-    })
-    
+    if (!saved) return
     setSelectedDayEvents([])
     setSelectedDay(null)
     setEditingNotes({})
     setEditingChanges({})
     setEditingDailyNotes({})
     setPendingDeletes(new Set())
+    setSelectedEntries(new Set())
+    setEditingDates({})
     toast.success('Changes saved')
   }
 
@@ -2469,6 +2467,27 @@ function CalendarView({
           {selectedDay !== null && (
             <>
               <div className="space-y-4 pt-2 overflow-y-auto flex-1 min-h-0">
+                {selectedDayEvents.length > 0 && (
+                  <div className="space-y-2 rounded-lg border border-border p-3">
+                    <label htmlFor="history-destination" className="block text-sm font-medium">
+                      Move selected entries to another day
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <Input id="history-destination" type="date" value={destinationDate} onChange={event => setDestinationDate(event.target.value)} />
+                      <Button type="button" variant="outline" disabled={!destinationDate || selectedEntries.size === 0} onClick={() => {
+                        setEditingDates(current => {
+                          const next = { ...current }
+                          selectedEntries.forEach(index => { next[index] = destinationDate })
+                          return next
+                        })
+                        setSelectedEntries(new Set())
+                      }}>
+                        Move ({selectedEntries.size})
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Entry times stay the same. Summary notes move with entries and are appended to existing notes.</p>
+                  </div>
+                )}
                 {selectedDailyChallengeAttempt && (
                   <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
                     <div className="rounded-full bg-amber-500/20 p-2 text-amber-600 dark:text-amber-400">
@@ -2491,14 +2510,28 @@ function CalendarView({
                   </div>
                 )}
                 {Object.entries(getEventsByTallyForDay(selectedDayEvents)).map(([tallyId, { tally, events: tallyEvents }]) => {
-                  const activeEvents = tallyEvents.filter(e => !pendingDeletes.has(e.timestamp))
+                  const indices = tallyEvents.map(event => selectedDayEvents.indexOf(event))
+                  const selectableIndices = indices.filter(index => !pendingDeletes.has(index))
+                  const activeEvents = tallyEvents.filter(event => !pendingDeletes.has(selectedDayEvents.indexOf(event)))
                   const editedCount = activeEvents.reduce((sum, e) => {
-                    const editedChange = parseInt(editingChanges[e.timestamp]) || e.change
+                    const value = editingChanges[selectedDayEvents.indexOf(e)]
+                    const editedChange = /^-?\d+$/.test(value ?? '') ? Number(value) : e.change
                     return sum + editedChange
                   }, 0)
                   
                   return tally && (
                     <div key={tallyId} className="space-y-3">
+                      <label className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
+                        <input type="checkbox" checked={selectableIndices.length > 0 && selectableIndices.every(index => selectedEntries.has(index))} disabled={selectableIndices.length === 0} onChange={event => {
+                          const checked = event.target.checked
+                          setSelectedEntries(current => {
+                            const next = new Set(current)
+                            selectableIndices.forEach(index => checked ? next.add(index) : next.delete(index))
+                            return next
+                          })
+                        }} />
+                        Select all {tally.title} entries
+                      </label>
                       <button
                         onClick={() => toggleTallyCollapse(tallyId)}
                         className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg w-full text-left hover:bg-secondary/70 transition-colors"
@@ -2513,9 +2546,9 @@ function CalendarView({
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {activeEvents.length} {activeEvents.length === 1 ? 'entry' : 'entries'}
-                            {pendingDeletes.size > 0 && tallyEvents.some(e => pendingDeletes.has(e.timestamp)) && (
+                            {pendingDeletes.size > 0 && indices.some(index => pendingDeletes.has(index)) && (
                               <span className="text-destructive ml-1">
-                                ({tallyEvents.filter(e => pendingDeletes.has(e.timestamp)).length} to delete)
+                                ({indices.filter(index => pendingDeletes.has(index)).length} to delete)
                               </span>
                             )}
                           </div>
@@ -2566,10 +2599,11 @@ function CalendarView({
                               </div>
                               
                               {tallyEvents.map((event, index) => {
-                                const isMarkedForDelete = pendingDeletes.has(event.timestamp)
+                                const entryIndex = selectedDayEvents.indexOf(event)
+                                const isMarkedForDelete = pendingDeletes.has(entryIndex)
                                 return (
                                   <div 
-                                    key={event.timestamp} 
+                                    key={entryIndex}
                                     className={`space-y-2 p-3 rounded-lg border transition-all ${
                                       isMarkedForDelete 
                                         ? 'bg-destructive/10 border-destructive/30 opacity-60' 
@@ -2581,13 +2615,27 @@ function CalendarView({
                                         {formatEventTime(event.timestamp)}
                                       </span>
                                       <div className="flex items-center gap-2">
+                                        {!isMarkedForDelete && (
+                                          <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <input type="checkbox" aria-label={`Select ${tally.title} entry ${index + 1} to move`} checked={selectedEntries.has(entryIndex)} onChange={e => {
+                                              const checked = e.target.checked
+                                              setSelectedEntries(current => {
+                                                const next = new Set(current)
+                                                if (checked) next.add(entryIndex)
+                                                else next.delete(entryIndex)
+                                                return next
+                                              })
+                                            }} />
+                                            Select
+                                          </label>
+                                        )}
                                         {isMarkedForDelete ? (
                                           <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => setPendingDeletes(prev => {
                                               const next = new Set(prev)
-                                              next.delete(event.timestamp)
+                                              next.delete(entryIndex)
                                               return next
                                             })}
                                             className="h-7 text-xs text-primary"
@@ -2599,10 +2647,10 @@ function CalendarView({
                                             <div className="flex items-center gap-1">
                                               <Input
                                                 type="number"
-                                                value={editingChanges[event.timestamp] || ''}
+                                                value={editingChanges[entryIndex] ?? ''}
                                                 onChange={(e) => setEditingChanges(prev => ({
                                                   ...prev,
-                                                  [event.timestamp]: e.target.value
+                                                  [entryIndex]: e.target.value
                                                 }))}
                                                 className="w-16 h-7 text-sm text-center font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                               />
@@ -2610,8 +2658,16 @@ function CalendarView({
                                             <Button
                                               variant="ghost"
                                               size="icon"
-                                              onClick={() => setPendingDeletes(prev => new Set([...prev, event.timestamp]))}
+                                              onClick={() => {
+                                                setPendingDeletes(prev => new Set([...prev, entryIndex]))
+                                                setSelectedEntries(prev => {
+                                                  const next = new Set(prev)
+                                                  next.delete(entryIndex)
+                                                  return next
+                                                })
+                                              }}
                                               className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                              aria-label={`Delete ${tally.title} entry ${index + 1}`}
                                             >
                                               <Trash size={14} weight="bold" />
                                             </Button>
@@ -2619,14 +2675,24 @@ function CalendarView({
                                         )}
                                       </div>
                                     </div>
+                                    {!isMarkedForDelete && editingDates[entryIndex] && editingDates[entryIndex] !== getDateKey(selectedDay) && (
+                                      <div className="flex items-center justify-between gap-2 text-xs text-primary">
+                                        <span>Moving to {editingDates[entryIndex]} when saved</span>
+                                        <button type="button" className="underline" onClick={() => setEditingDates(current => {
+                                          const next = { ...current }
+                                          delete next[entryIndex]
+                                          return next
+                                        })}>Undo move</button>
+                                      </div>
+                                    )}
                                     {!isMarkedForDelete && (
                                       <Textarea
                                         id={`event-note-${tallyId}-${index}`}
                                         placeholder="Add a note for this entry..."
-                                        value={editingNotes[event.timestamp] || ''}
+                                        value={editingNotes[entryIndex] ?? ''}
                                         onChange={(e) => setEditingNotes(prev => ({
                                           ...prev,
-                                          [event.timestamp]: e.target.value
+                                          [entryIndex]: e.target.value
                                         }))}
                                         className="min-h-[60px] resize-none text-sm"
                                       />
@@ -3516,73 +3582,19 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
     setEditingTitle('')
   }
 
-  const updateEventNote = (timestamp: number, note: string) => {
-    setTallyEvents((current) =>
-      (current ?? []).map((e) => 
-        e.timestamp === timestamp 
-          ? { ...e, note: note.trim() || undefined } 
-          : e
-      )
-    )
-  }
-
-  const deleteEvent = (timestamp: number) => {
-    const event = currentEvents.find(e => e.timestamp === timestamp)
-    if (!event) return
-    
-    setTallies((current) =>
-      (current ?? []).map((t) => 
-        t.id === event.tallyId 
-          ? { ...t, count: t.count - event.change } 
-          : t
-      )
-    )
-    
-    setTallyEvents((current) =>
-      (current ?? []).filter((e) => e.timestamp !== timestamp)
-    )
-  }
-
-  const updateEventChange = (timestamp: number, newChange: number) => {
-    const event = currentEvents.find(e => e.timestamp === timestamp)
-    if (!event) return
-    
-    const diff = newChange - event.change
-    
-    setTallies((current) =>
-      (current ?? []).map((t) => 
-        t.id === event.tallyId 
-          ? { ...t, count: t.count + diff } 
-          : t
-      )
-    )
-    
-    setTallyEvents((current) =>
-      (current ?? []).map((e) => 
-        e.timestamp === timestamp 
-          ? { ...e, change: newChange } 
-          : e
-      )
-    )
-  }
-
-  const updateDailyNote = (date: string, tallyId: string, note: string) => {
-    setDailyTallyNotes((current) => {
-      const existing = (current ?? []).find(n => n.date === date && n.tallyId === tallyId)
-      if (existing) {
-        if (!note.trim()) {
-          return (current ?? []).filter(n => !(n.date === date && n.tallyId === tallyId))
-        }
-        return (current ?? []).map(n => 
-          n.date === date && n.tallyId === tallyId 
-            ? { ...n, note: note.trim() } 
-            : n
-        )
-      } else if (note.trim()) {
-        return [...(current ?? []), { date, tallyId, note: note.trim() }]
-      }
-      return current ?? []
-    })
+  const saveHistoryEdits = (edits: HistoryEdits) => {
+    try {
+      const updated = applyHistoryEdits(currentTallies, currentEvents, currentDailyNotes, edits)
+      setTallies(updated.tallies)
+      setTallyEvents(updated.events)
+      setDailyTallyNotes(updated.dailyNotes)
+      return true
+    } catch (error) {
+      toast.error('Could not save history changes', {
+        description: error instanceof Error ? error.message : String(error),
+      })
+      return false
+    }
   }
 
   const handleRestoreSnapshot = (data: AppData) => {
@@ -3870,18 +3882,21 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
                               size="icon"
                               onClick={() => deleteTally(tally.id)}
                               className="h-10 w-10 md:h-12 md:w-12"
+                              aria-label="Delete tally"
                             >
                               <Trash size={18} weight="bold" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={closeEditMode}
+                              className="h-10 w-10 md:h-12 md:w-12"
+                              aria-label="Done editing tally"
+                              title="Done"
+                            >
+                              <Check size={18} weight="bold" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="default"
-                            onClick={closeEditMode}
-                            className="text-sm"
-                          >
-                            Done
-                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -4048,10 +4063,7 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
             dailyNotes={currentDailyNotes}
             dailyChallengeAttempts={currentDailyChallengeAttempts}
             onClose={() => setShowCalendar(false)}
-            onUpdateEventNote={updateEventNote}
-            onUpdateDailyNote={updateDailyNote}
-            onDeleteEvent={deleteEvent}
-            onUpdateEventChange={updateEventChange}
+            onSaveHistoryEdits={saveHistoryEdits}
           />
         )}
       </AnimatePresence>

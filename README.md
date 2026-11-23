@@ -27,6 +27,8 @@ Pushes to `main` deploy the Pages build to `https://bananatally.me/`. The deploy
 
 Guest web data is local to each browser and origin. Use the snapshot export and import features to move data between the retired Spark deployment and GitHub Pages.
 
+In History, select one or more entries and a destination date, then save the changes. Entry times are preserved; their daily summary note moves with them and is appended to any existing destination note.
+
 The daily challenge is available at `/daily/` relative to the deployed app URL. Its four rounds are generated deterministically from the player's local calendar date.
 
 ## Accounts and sync
