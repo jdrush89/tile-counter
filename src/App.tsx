@@ -2510,8 +2510,8 @@ function CalendarView({
                       Move selected entries to another day
                     </label>
                     <div className="flex items-center gap-2">
-                      <Input id="history-destination" type="date" value={destinationDate} onChange={event => setDestinationDate(event.target.value)} />
-                      <Button type="button" variant="outline" disabled={!destinationDate || selectedEntries.size === 0} onClick={() => {
+                      <Input id="history-destination" type="date" className="dark:[color-scheme:dark]" value={destinationDate} onChange={event => setDestinationDate(event.target.value)} />
+                      <Button type="button" variant="outline" className="dark:hover:text-foreground" disabled={!destinationDate || selectedEntries.size === 0} onClick={() => {
                         setEditingDates(current => {
                           const next = { ...current }
                           selectedEntries.forEach(index => { next[index] = destinationDate })
@@ -2751,6 +2751,7 @@ function CalendarView({
                   <>
                     <Button
                       variant="outline"
+                      className="dark:hover:text-foreground"
                       onClick={() => {
                         setSelectedDayEvents([])
                         setSelectedDay(null)
