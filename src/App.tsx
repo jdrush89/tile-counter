@@ -252,9 +252,11 @@ const FREE_ANIMALS = [
   { id: 19, name: 'Shark', unlockAt: 0 },
   { id: 20, name: 'Whale', unlockAt: 0 },
   { id: 21, name: 'Mouse Pat', unlockAt: 0 },
+  { id: 27, name: 'Dice', unlockAt: 0 },
 ]
 
 const ALL_ANIMALS = [...BASE_ANIMALS, ...UNLOCKABLE_ANIMALS, ...FREE_ANIMALS]
+const ANIMAL_OPTIONS = [...BASE_ANIMALS, ...FREE_ANIMALS, ...UNLOCKABLE_ANIMALS]
 
 function RunningDog({ legPhase }: { legPhase: number }) {
   const frontLegAngle = Math.sin(legPhase) * 35
@@ -603,6 +605,38 @@ function SwimmingBlobfish({ legPhase }: { legPhase: number }) {
         <circle cx="26" cy="17" r="1.5" fill="oklch(0.25 0 0)" />
         <circle cx="38" cy="17" r="1.5" fill="oklch(0.25 0 0)" />
         <path d="M27 29 Q32 25 38 29" stroke="oklch(0.25 0 0)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7" />
+      </g>
+    </svg>
+  )
+}
+
+function RunningDice({ legPhase }: { legPhase: number }) {
+  const swing = Math.sin(legPhase) * 22
+  const bounce = Math.abs(Math.sin(legPhase)) * 1.5
+
+  return (
+    <svg viewBox="0 0 50 40" className="w-full h-full">
+      <g transform={`translate(0, ${-bounce})`}>
+        <g transform={`rotate(${swing}, 15, 17)`}>
+          <path d="M15 17 L7 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="7" cy="22" r="2" fill="white" />
+        </g>
+        <g transform={`rotate(${-swing}, 35, 17)`}>
+          <path d="M35 17 L43 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="43" cy="22" r="2" fill="white" />
+        </g>
+        <g transform={`rotate(${-swing}, 20, 27)`}>
+          <path d="M20 27 L18 37" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="17" cy="37" rx="3" ry="1.5" fill="white" />
+        </g>
+        <g transform={`rotate(${swing}, 30, 27)`}>
+          <path d="M30 27 L32 37" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="33" cy="37" rx="3" ry="1.5" fill="white" />
+        </g>
+        <rect x="15" y="7" width="20" height="20" rx="3" fill="white" stroke="oklch(0.35 0.02 255)" strokeWidth="1" />
+        {[[19.5, 11.5], [30.5, 11.5], [25, 17], [19.5, 22.5], [30.5, 22.5]].map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.5" fill="oklch(0.28 0.02 255)" />
+        ))}
       </g>
     </svg>
   )
@@ -1641,6 +1675,9 @@ function RunningAnimal({ variant, legPhase }: { variant: number; legPhase: numbe
       break
     case 26:
       animal = <SwimmingBlobfish legPhase={legPhase} />
+      break
+    case 27:
+      animal = <RunningDice legPhase={legPhase} />
       break
     default:
       animal = <RunningDog legPhase={legPhase} />
@@ -3762,7 +3799,8 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
                               <Button
                                 type="submit"
                                 size="icon"
-                                className="h-9 w-9 shrink-0"
+                                className="h-9 w-9 shrink-0 text-white dark:bg-violet-700 dark:hover:bg-violet-600 dark:hover:text-white"
+                                aria-label="Save tally name"
                               >
                                 <Check size={16} weight="bold" />
                               </Button>
@@ -3806,11 +3844,11 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
                             value={String(tally.animalType ?? 0)}
                             onValueChange={(value) => handleAnimalSelect(tally.id, Number(value))}
                           >
-                            <SelectTrigger className="w-full max-w-[200px] md:max-w-[240px] h-10 text-sm">
+                            <SelectTrigger className="w-full max-w-[200px] md:max-w-[240px] h-10 text-sm dark:hover:bg-violet-600 dark:hover:text-white dark:hover:[&_svg]:text-white">
                               <SelectValue placeholder="Select animal" />
                             </SelectTrigger>
                             <SelectContent>
-                              {ALL_ANIMALS.map((animal) => {
+                              {ANIMAL_OPTIONS.map((animal) => {
                                 const isUnlocked = animal.unlockAt === 0 || animal.unlockAt <= totalTallies
                                 return (
                                   <SelectItem
@@ -3864,7 +3902,8 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
                               variant="outline"
                               size="icon"
                               onClick={() => decrementTally(tally.id)}
-                              className="h-10 w-10 md:h-12 md:w-12"
+                              className="h-10 w-10 md:h-12 md:w-12 dark:hover:bg-violet-600 dark:hover:text-white"
+                              aria-label="Decrease tally"
                             >
                               <Minus size={18} weight="bold" />
                             </Button>
@@ -3872,7 +3911,7 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
                               variant="outline"
                               size="icon"
                               onClick={() => openCustomAmountDialog(tally.id)}
-                              className="h-10 w-10 md:h-12 md:w-12"
+                              className="h-10 w-10 md:h-12 md:w-12 dark:hover:bg-violet-600 dark:hover:text-white"
                               title="Add with note"
                             >
                               <NotePencil size={18} weight="bold" />
@@ -3881,16 +3920,15 @@ function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceI
                               variant="destructive"
                               size="icon"
                               onClick={() => deleteTally(tally.id)}
-                              className="h-10 w-10 md:h-12 md:w-12"
+                              className="h-10 w-10 md:h-12 md:w-12 dark:hover:bg-red-600 dark:hover:text-white"
                               aria-label="Delete tally"
                             >
                               <Trash size={18} weight="bold" />
                             </Button>
                             <Button
-                              variant="outline"
                               size="icon"
                               onClick={closeEditMode}
-                              className="h-10 w-10 md:h-12 md:w-12"
+                              className="h-10 w-10 md:h-12 md:w-12 bg-green-700 text-white hover:bg-green-600 hover:text-white dark:hover:bg-green-600 dark:hover:text-white"
                               aria-label="Done editing tally"
                               title="Done"
                             >
