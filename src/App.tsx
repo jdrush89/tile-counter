@@ -13,59 +13,16 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { useStorage, useDeviceUserId } from '@/hooks/use-storage'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DailyChallenge } from '@/DailyChallenge'
+import { AccountDialog } from '@/components/AccountDialog'
+import { SyncConflictDialog } from '@/components/SyncConflictDialog'
+import { useAuth } from '@/hooks/use-auth'
+import { useAccountSync } from '@/hooks/use-account-sync'
+import { supabase } from '@/lib/supabase'
 import {
   DAILY_CHALLENGE_ATTEMPTS_KEY,
   type DailyChallengeAttempts,
 } from '@/lib/daily-challenge-storage'
-
-interface TallyEvent {
-  tallyId: string
-  timestamp: number
-  change: number
-  note?: string
-}
-
-interface DailyTallyNote {
-  date: string
-  tallyId: string
-  note: string
-}
-
-interface Tally {
-  id: string
-  title: string
-  count: number
-  color: string
-  animalType: number
-  goal?: number
-}
-
-interface UserInfo {
-  id: string
-  login: string
-  avatarUrl: string
-  email: string
-  isOwner: boolean
-}
-
-function useCurrentUser() {
-  const [user, setUser] = useState<UserInfo | null>(null)
-  const deviceUserId = useDeviceUserId()
-  
-  useEffect(() => {
-    if (deviceUserId) {
-      setUser({
-        id: deviceUserId,
-        login: 'Local User',
-        avatarUrl: '',
-        email: '',
-        isOwner: true,
-      })
-    }
-  }, [deviceUserId])
-  
-  return user
-}
+import type { Tally, TallyEvent, DailyTallyNote } from '@/lib/account-data'
 
 const COLORS = [
   'oklch(0.65 0.2 250)',
@@ -3212,13 +3169,20 @@ function SettingsMenu({
   )
 }
 
-function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode; setTheme: (theme: ThemeMode) => void }) {
-  const [tallies, setTallies, talliesLoaded] = useStorage<Tally[]>(`tallies-${user.id}`, [])
-  const [purchasedAnimals, setPurchasedAnimals, purchasedAnimalsLoaded] = useStorage<number[]>(`purchased-animals-${user.id}`, [])
-  const [tallyEvents, setTallyEvents, tallyEventsLoaded] = useStorage<TallyEvent[]>(`tally-events-${user.id}`, [])
-  const [dailyTallyNotes, setDailyTallyNotes, dailyTallyNotesLoaded] = useStorage<DailyTallyNote[]>(`daily-tally-notes-${user.id}`, [])
+function TallyApp({ deviceId, account, openAccount, theme, setTheme }: { deviceId: string; account: { id: string; email?: string } | null; openAccount: () => void; theme: ThemeMode; setTheme: (theme: ThemeMode) => void }) {
+  const [guestTallies, setGuestTallies, talliesLoaded] = useStorage<Tally[]>(`tallies-${deviceId}`, [])
+  const [purchasedAnimals, setPurchasedAnimals, purchasedAnimalsLoaded] = useStorage<number[]>(`purchased-animals-${deviceId}`, [])
+  const [guestEvents, setGuestEvents, tallyEventsLoaded] = useStorage<TallyEvent[]>(`tally-events-${deviceId}`, [])
+  const [guestNotes, setGuestNotes, dailyTallyNotesLoaded] = useStorage<DailyTallyNote[]>(`daily-tally-notes-${deviceId}`, [])
+  const accountSync = useAccountSync(account?.id ?? null, deviceId)
+  const tallies = account ? accountSync.data?.tallies : guestTallies
+  const setTallies = account ? accountSync.setTallies : setGuestTallies
+  const tallyEvents = account ? accountSync.data?.tallyEvents : guestEvents
+  const setTallyEvents = account ? accountSync.setTallyEvents : setGuestEvents
+  const dailyTallyNotes = account ? accountSync.data?.dailyTallyNotes : guestNotes
+  const setDailyTallyNotes = account ? accountSync.setDailyTallyNotes : setGuestNotes
   const [dailyChallengeAttempts, , dailyChallengeAttemptsLoaded] = useStorage<DailyChallengeAttempts>(DAILY_CHALLENGE_ATTEMPTS_KEY, {})
-  const storageLoaded = talliesLoaded && purchasedAnimalsLoaded && tallyEventsLoaded && dailyTallyNotesLoaded && dailyChallengeAttemptsLoaded
+  const storageLoaded = (account ? !!accountSync.data : talliesLoaded && tallyEventsLoaded && dailyTallyNotesLoaded) && purchasedAnimalsLoaded && dailyChallengeAttemptsLoaded
   
   const [newTitle, setNewTitle] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -3305,6 +3269,13 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
         <div className="text-center space-y-4">
           <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 animate-pulse" />
           <p className="text-muted-foreground">Loading your tallies...</p>
+          {accountSync.error && (
+            <div className="max-w-sm space-y-3">
+              <p role="alert" className="text-destructive">{accountSync.error}</p>
+              <Button onClick={() => window.location.reload()}>Retry</Button>
+              <Button variant="outline" onClick={() => { void supabase?.auth.signOut() }}>Sign out</Button>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -3342,7 +3313,7 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
     const animalType = Math.floor(Math.random() * 4)
     setTallies((current) => [
       ...(current ?? []),
-      { id: Date.now().toString(), title: newTitle.trim(), count: 0, color, animalType }
+      { id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`, title: newTitle.trim(), count: 0, color, animalType }
     ])
     setNewTitle('')
     setDialogOpen(false)
@@ -3646,6 +3617,25 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
           <p className="text-muted-foreground">
             Tap to count. Long press to edit.
           </p>
+          <div className="flex flex-col items-center gap-1">
+            {account ? (
+              <>
+                <p className="text-xs text-muted-foreground">{account.email} · {accountSync.status}</p>
+                <Button variant="ghost" size="sm" onClick={async () => {
+                  try {
+                    await accountSync.waitForLocal()
+                    const result = await supabase?.auth.signOut()
+                    if (result?.error) throw result.error
+                  } catch (error) {
+                    toast.error('Could not sign out', { description: error instanceof Error ? error.message : String(error) })
+                  }
+                }}>Sign out</Button>
+                {accountSync.error && <p role="alert" className="max-w-lg text-sm text-destructive">{accountSync.error} <button type="button" className="underline" onClick={() => { void accountSync.retry() }}>Retry</button></p>}
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={openAccount}>Sign in or create account</Button>
+            )}
+          </div>
           
           <div className="flex items-center justify-center gap-3 pt-2">
             <Button
@@ -4098,14 +4088,19 @@ function TallyApp({ user, theme, setTheme }: { user: UserInfo; theme: ThemeMode;
           dailyTallyNotes: currentDailyNotes,
         }}
         onRestoreSnapshot={handleRestoreSnapshot}
-        userId={user.id}
+        userId={account?.id ?? deviceId}
       />
+      {accountSync.pending && (
+        <SyncConflictDialog conflict={accountSync.pending} resolve={accountSync.resolveConflicts} />
+      )}
     </div>
   )
 }
 
 function App() {
-  const user = useCurrentUser()
+  const deviceId = useDeviceUserId()
+  const auth = useAuth()
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false)
   const { theme, setTheme, isLoaded: themeLoaded } = useTheme()
   const isDailyChallenge = window.location.pathname.replace(/\/+$/, '').endsWith('/daily')
 
@@ -4134,7 +4129,7 @@ function App() {
     )
   }
 
-  if (!user) {
+  if (!deviceId || !auth.ready) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -4147,7 +4142,9 @@ function App() {
 
   return (
     <>
-      <TallyApp user={user} theme={theme} setTheme={setTheme} />
+      {auth.error && <p role="alert" className="text-center text-destructive">{auth.error}</p>}
+      <TallyApp key={auth.user?.id ?? deviceId} deviceId={deviceId} account={auth.user} openAccount={() => setAccountDialogOpen(true)} theme={theme} setTheme={setTheme} />
+      <AccountDialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen} />
       <Toaster position="top-center" />
     </>
   )
